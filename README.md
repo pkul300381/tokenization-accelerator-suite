@@ -19,11 +19,6 @@ This folder turns the simulated web prototype into a full-scale application brie
 
 The pack does not depend on a specific model. Use whichever assistant your team has licensed and approved.
 
-For Claude, the simplest setup is a Claude Project (or a Cowork folder) containing `instructions.md`, `skill.md`, `PRD.md`, `ARCHITECTURE.md`, `API_AND_DATA.md` and `BUILD_PLAN.md`. Ask Claude to read `instructions.md` and `skill.md` first, then work through `BUILD_PLAN.md` one task at a time. `skill.md` can also be turned into a Claude skill so it loads automatically.
-
-For ChatGPT, create a Project (or a custom GPT) and upload the same files. Put the contents of `instructions.md` into the project instructions, and keep `skill.md` as an uploaded knowledge file. Use a model with strong code generation and long context. If you use ChatGPT's code execution, run the test commands listed in `BUILD_PLAN.md` yourself, because sandbox results vary.
-
-For any other model, treat the files as a context pack. Load `instructions.md` as the system prompt where the tool allows it, otherwise paste it first in the conversation.
 
 ## Recommended way to work
 
