@@ -14,6 +14,8 @@ This folder turns the simulated web prototype into a full-scale application brie
 | `API_AND_DATA.md` | REST endpoints, data model, event contracts | Backend and frontend engineers |
 | `BUILD_PLAN.md` | Phased delivery plan, task breakdown, exit criteria | Delivery lead |
 | `PROMPT_LIBRARY.md` | Copy-paste prompts for each phase, for Claude or ChatGPT | Engineers driving the assistant |
+| `TOKEN_GATEWAY.md` | Token Gateway capabilities, acceptance criteria, APISIX recommendation and delivery plan | Gateway engineers and architects |
+| `token-gateway/` | Initial APISIX-backed gateway configuration project and unit tests | Gateway engineers |
 
 ## Choosing the assistant
 

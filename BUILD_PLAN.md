@@ -15,7 +15,7 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 - **F0-05 Database and migrations.** PostgreSQL in Docker Compose; migrations for the tables in `API_AND_DATA.md` section 9; seed script for catalogue data; audit table with insert-and-select-only role. Tests: migration up and down on an empty database; seed idempotent. Exit check: `scripts/seed` runs twice with no error and the same row counts.
 - **F0-06 Web shell.** Vite React app, router, layout with header, theme toggle (system, light, dark), footer with version and environment, a "Simulated data" badge component. Tests: render test for each route; axe accessibility check on the shell. Exit check: shell renders at 400 px with no horizontal scroll.
 - **F0-07 Dev environment and infra baseline.** Terraform for dev: VPC, RDS, ECS cluster, ECR, S3 and CloudFront for the web app, Secrets Manager, KMS keys. No production resources. Exit check: `terraform plan` clean in dev; apply to dev succeeds.
-- **F0-08 Event bus and gateway skeleton.** Local event bus (Redis Streams) with the outbox pattern; gateway app with health and version endpoints; route table file in `packages/shared`. Tests: the outbox row and the domain row commit together or not at all; health and version return 200.
+- **F0-08 Event bus and gateway skeleton.** Local event bus (Redis Streams) with the outbox pattern; APISIX local development configuration; shared route table in `packages/shared`; a config generator/validator in `apps/gateway`. Tests: the outbox row and the domain row commit together or not at all; APISIX config builds from the route table and passes its schema validation.
 
 **Gate 0:** CI green, dev environment reachable, shell shows the suite title and five disabled service cards.
 
@@ -27,8 +27,9 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 - **F1-02 Admin catalogue update.** `PUT /v1/admin/catalogue/stablecoins/{code}` with audit row. Tests: admin allowed, architect forbidden (403), audit row present.
 - **F1-03 Landing page.** Suite title, five service cards (status Live, Beta or Planned per `PRD.md` section 4), keyboard navigation, reduced-motion support. Playwright test for card navigation.
 - **F1-04 Authentication and RBAC middleware.** Role claims, endpoint-level role checks, UI route guards. Tests: each role against each endpoint in a matrix (generated from `API_AND_DATA.md`).
-- **F1-05 Token Gateway routing and auth.** Route table proxy to the API service; OIDC validation; scope checks per route. Tests: a missing scope returns 403; an expired token returns 401; a valid token with scope is forwarded with the request ID.
-- **F1-06 Version gate and device registration stub.** `X-Client-Platform` and `X-Client-Version` checks returning 426 below the minimum; device registration and revocation endpoints. Tests: below-minimum version gets 426; revoked device token is rejected.
+- **F1-05 Token Gateway deployment, routing and OIDC.** Deploy APISIX on ECS behind WAF/ALB; generate its standalone file-driven route configuration from the shared route table; proxy to private API upstreams; validate OIDC signature, issuer, audience, expiry and route scopes. Tests: route contract parity; unknown route returns 404 without upstream access; missing scope returns 403; expired/wrong-audience token returns 401; valid token with scope is forwarded with request ID.
+- **F1-06 Client version gate and device routes.** Require `X-Client-Platform` and `X-Client-Version`, return 426 for missing or below-minimum values, and route authenticated push-token register/revoke requests to the Notification Service. Tests: each platform's boundary versions; missing and invalid headers; device token revoked after logout.
+- **F1-07 Gateway transport and observability controls.** CORS allow-list, body-size and content-type enforcement, request-ID validation/propagation, body-free access logs, and standard problem responses. Tests: bad CORS origin, oversized/malformed request, request ID propagation, and log scan for bodies/tokens/full wallet addresses.
 
 **Gate 1:** catalogue endpoints pass tests; role matrix test passes; landing page passes accessibility check.
 
@@ -91,9 +92,10 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 ### S8 Token Gateway
 
 - **G8-01 Route table and proxy.** One route table in `packages/shared`; proxy to upstream services; contract test that the table matches section 14 of `API_AND_DATA.md`.
-- **G8-02 Auth, scopes and rate limits.** JWT validation, scope checks, and per-user, per-device and per-app limits in Redis. Tests: a missing scope returns 403; a limit breach returns 429 with Retry-After.
-- **G8-03 Version gate and mobile headers.** Required headers, 426 below minimum, push token registration and revocation through the gateway. Tests: below-minimum version gets 426; logout removes the push token.
+- **G8-02 Distributed rate limits.** Redis-backed limits keyed independently by user, device and client application, using quotas in `API_AND_DATA.md` section 11. Tests: each limit dimension is exercised independently and in combination; a limit breach returns 429 with `Retry-After` across multiple gateway tasks.
+- **G8-03 Mobile compatibility and device lifecycle integration.** End-to-end check that required client headers are enforced and push-token register/revoke calls are routed through the gateway to the Notification Service. Tests: below-minimum version gets 426; logout removes the push token; the gateway never stores raw push tokens.
 - **G8-04 Network isolation test.** Probe every domain service port from outside the VPC. Exit check: every probe fails except the gateway's HTTPS port.
+- **G8-05 Gateway resilience.** Configure per-route upstream timeouts/circuit breakers and bounded retry budgets. Retry only safe requests or writes whose idempotency is enforced by the API. Tests: one stopped upstream does not affect unrelated routes; gateway returns a stable degraded response within the documented timeout; no unsafe write retry.
 
 
 **Gate 2:** all eight services (S1 to S8) pass unit, API and end-to-end tests in sandbox; the cross-cutting audit test passes; accessibility checks pass on every page; a walkthrough of the golden path by an Opus architect is recorded.

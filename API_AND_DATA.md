@@ -7,7 +7,7 @@ Version 1.0 · 2026-10-16 · All endpoints are under `/v1`. JSON in and out. Err
 - Authentication: `Authorization: Bearer <token>` (OIDC access token). Every route except `GET /v1/health` requires it.
 - Gateway: all clients call the Token Gateway (section 14). Clients send `X-Client-Platform` (web, ios or android) and `X-Client-Version`. A missing or below-minimum value returns 426 Upgrade Required.
 - Roles: `architect`, `operations`, `compliance`, `admin`, `viewer`, `production_support`. Each endpoint lists allowed roles.
-- Idempotency: write endpoints accept `Idempotency-Key` (UUID). Repeat requests with the same key return the original response for 24 hours.
+- Idempotency: state-changing endpoints require `Idempotency-Key` (UUID); pure POST operations that do not mutate domain state are exempt (`POST /v1/selector/configurations/{id}/validate`, `POST /v1/gas/estimate`, `POST /v1/compliance/evaluate`). The same key and same request body replay the original response for 24 hours. Reusing a key with a different body returns 422; a concurrent duplicate returns 409 with `Retry-After` while the first request is in progress. The API service owns this behavior and persistence.
 - Pagination: `?limit=` (default 25, max 100) and `?cursor=`. Responses include `nextCursor`.
 - Timestamps: ISO 8601 UTC, for example `2026-10-16T12:00:00Z`.
 - Errors (RFC 9457 problem details):
@@ -267,7 +267,7 @@ Tables, primary keys in bold in the description:
 - `export_jobs`: **id**, tenant_id, kind (`csv` or `pdf`), filter (jsonb), status, file_key, requested_by, requested_at.
 - `deployment_runs`: **id**, tenant_id, blueprint_version_id, state, plan_summary, requested_by, approved_by, created_at.
 - `deployment_steps`: **id**, run_id, name, state, started_at, ended_at, detail.
-- `idempotency_keys`: **key**, tenant_id, route, response_hash, response_body, created_at, expires_at.
+- `idempotency_keys`: **id**, tenant_id, actor_id, key_hash, route, request_hash, state (`in_progress` or `completed`), response_status, response_body, created_at, expires_at. Unique (tenant_id, actor_id, route, key_hash). Never log raw keys or stored response bodies.
 
 - `compliance_rules`: **id**, rule_set_id, version, definition (jsonb), status, created_by, created_at. Versioned; a published version is never edited in place.
 - `compliance_decisions`: **id**, tenant_id, check_type, subject_type, subject_id, outcome, score, reasons (jsonb), rule_set_version, input_hash, evaluated_at.
@@ -360,7 +360,7 @@ Notification object:
 
 ## 14. Token Gateway
 
-The gateway forwards each public path to its upstream service after checking the token, scopes, version and rate limits. The route table is kept in `packages/shared/routes.ts`, and this section is its human-readable copy.
+The gateway forwards each public path to its upstream service after checking the token, scopes, client version and rate limits. The route table is kept in `packages/shared/routes.ts`, and this section is its human-readable copy. The implementation route metadata is method/path-specific and includes a rate-limit class and idempotency policy; quotas are defined in section 11 and are enforced per user, device and client application. The gateway forwards `Idempotency-Key`; the API service owns idempotency persistence and replay behavior. Token Gateway implementation and deployment details are in `TOKEN_GATEWAY.md`.
 
 | Path prefix | Upstream | Scopes | Mobile allowed |
 |---|---|---|---|

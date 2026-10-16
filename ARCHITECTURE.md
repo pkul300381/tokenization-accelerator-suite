@@ -27,7 +27,7 @@ External systems the suite depends on, all reached through adapters:
         +----------------- HTTPS ----------------+
                             |
           +-----------------v------------------+
-          | Token Gateway (apps/gateway)       |  ECS Fargate behind WAF and ALB
+          | Token Gateway (APISIX)             |  ECS Fargate behind WAF and ALB
           | OIDC check, scopes, rate limits,   |
           | version gate, request IDs, routing |
           +-----------------+------------------+
@@ -74,7 +74,7 @@ The web app is a static single-page application served from object storage behin
 | `packages/shared` | Schemas, types, catalogue seed, constants | Single source of truth for contracts. |
 | `packages/adapters` | Adapter interfaces and implementations | Real adapters are feature-flagged per environment. |
 | `infra/terraform` | AWS environments | Dev, staging, prod in separate accounts. |
-| `apps/gateway` | Token Gateway | Route table, OIDC validation, scope checks, rate limits, version gate, request IDs, CORS. No business logic or data storage. Section 12. |
+| `apps/gateway` | Token Gateway configuration and route-contract tooling | Generates APISIX standalone configuration from the shared route table; tests route parity. APISIX handles proxying and configured gateway policies. No business logic or domain data storage. See section 12 and `TOKEN_GATEWAY.md`. |
 | `apps/api` compliance module | Compliance & Risk Engine (S6) | Rule sets as versioned data, evaluation, decisions, review cases. Section 13. |
 | `apps/api` notifications module and `workers` | Notification Service (S7) | Event consumer, routing, dedupe, escalation, delivery through adapters, chain transaction watcher. Section 14. |
 | `packages/events` | Event contracts | Event names, payload schemas, outbox writer, idempotent subscriber helper. |
@@ -166,19 +166,19 @@ Release: trunk-based development with short-lived branches; CI on every pull req
 
 ## 11. Decisions to record
 
-Record each of these in `docs/DECISIONS.md` when made: frontend framework; API framework; ORM; hosting (ECS or EKS); custody provider shortlist; first public chain and first permissioned ledger; PDF generation library; catalogue ownership; retention period; Token Gateway implementation (AWS API Gateway or Fastify); event bus; chat and paging tools; screening provider; risk scoring approach (rules first, models later).
+Record each of these in `docs/DECISIONS.md`: frontend framework; API framework; ORM; hosting (ECS or EKS); custody provider shortlist; first public chain and first permissioned ledger; PDF generation library; catalogue ownership; retention period; Token Gateway deployment/configuration model; event bus; chat and paging tools; screening provider; risk scoring approach (rules first, models later).
 
 ## 12. Token Gateway
 
-Responsibilities: one route table that maps public paths to upstream services; OIDC token validation (signature, issuer, audience and expiry); scope checks per route; rate limits per user, per device and per client application (token bucket in Redis); the version gate, which reads `X-Client-Platform` and `X-Client-Version`; request ID creation and propagation; CORS for configured web origins; removal of internal error details from responses.
+Responsibilities: Apache APISIX provides the proxy/data plane. A reviewed route table maps public paths to upstream services; gateway policy validates OIDC access tokens (signature, issuer, audience and expiry), checks scopes, applies rate limits per user/device/client application using Redis, enforces the client version gate, creates and propagates request IDs, applies CORS for configured web origins, and removes internal error details from responses.
 
 Not responsibilities: business logic, data storage, compliance decisions, and any handling of keys or secrets beyond token validation.
 
-Route table: the table is kept as data in `packages/shared/routes.ts`. Each entry holds the path prefix, the upstream service, the required scopes, the rate limit class and whether mobile clients may call it. Section 14 of `API_AND_DATA.md` is the human-readable copy, and a contract test fails if the two differ.
+Route table: the table is kept as data in `packages/shared/routes.ts`. Each entry holds the method/path match or prefix, upstream service, required scopes, rate-limit class, and mobile allowance. Section 14 of `API_AND_DATA.md` is its human-readable copy, and a contract test fails if the two differ. The table generates APISIX standalone configuration; deployment changes are versioned and reviewed, not made manually in production.
 
 Mobile specifics: access tokens are short-lived and refresh tokens are stored in the platform's secure storage [VERIFY with the mobile team]; the app never holds blockchain signing keys, and ownership signatures are made in the user's wallet app [VERIFY the wallet connection method]; push tokens are registered through the gateway and removed on logout; certificate pinning is a mobile build decision [VERIFY].
 
-Deployment: WAF and an ALB in front of an ECS service. If the team chooses AWS API Gateway instead, it uses the same route table, and the token validation moves to a Lambda or ECS authoriser. Either way, the domain services stay on private subnets.
+Deployment: AWS WAF and an ALB in front of APISIX ECS tasks in private subnets. The v1 recommendation uses APISIX standalone file-driven configuration to avoid an etcd service. Require TLS 1.2 or later on public and private hops with upstream certificate verification. Confirm multi-task configuration rollout and Redis-backed rate-limit behavior in staging. Domain services remain on private subnets and accept client traffic only from the gateway path.
 
 ## 13. Compliance and Risk Engine
 

@@ -38,7 +38,7 @@ Use these unless the team has recorded a different decision in `docs/DECISIONS.m
 | Tests | Vitest (unit), Playwright (end-to-end), Supertest or Fastify inject (API) | Coverage floor in `BUILD_PLAN.md`. |
 | Infrastructure as code | Terraform (preferred) or AWS CDK | Environments: dev, staging, prod. |
 | AWS | ECS Fargate or EKS for services; RDS PostgreSQL; ElastiCache; Secrets Manager; KMS; CloudWatch; WAF; API Gateway or ALB | See `ARCHITECTURE.md`. |
-| API gateway (Token Gateway) | Fastify app in `apps/gateway`, or AWS API Gateway in front of the same route table (decision recorded in `docs/DECISIONS.md`) | Single public entry point for web and mobile clients. Holds no business logic. |
+| API gateway (Token Gateway) | Apache APISIX on ECS, standalone file-driven configuration generated from `packages/shared/routes.ts` | Single public entry point for web and mobile clients. Holds no business logic. See `TOKEN_GATEWAY.md` and `docs/DECISIONS.md`. |
 | Events and notifications | Amazon EventBridge with SQS queues; Redis Streams in local dev; outbox pattern in the API database | Chain and domain events fan out to the Notification Service, the audit writer and the Compliance & Risk Engine. |
 | CI/CD | GitHub Actions | Lint, type-check, test, scan, build, deploy to dev automatically; staging and prod need approval. |
 
