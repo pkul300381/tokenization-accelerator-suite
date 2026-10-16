@@ -1,5 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Opus Tokenization Accelerator Suite</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Opus Tokenization Accelerator Suite</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -237,7 +236,7 @@ pre.code {
   background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-size: 14px; z-index: 20; max-width: calc(100% - 32px);
 }
 .foot { margin-top: 48px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
-</style>
+</style></head><body>
 
 <header class="top">
   <div class="top-in">
@@ -249,6 +248,9 @@ pre.code {
       <a href="#/fx" data-nav="fx">Fiat Bridge</a>
       <a href="#/gas" data-nav="gas">Gas Calculator</a>
       <a href="#/audit" data-nav="audit">Audit &amp; Reporting</a>
+      <a href="#/compliance" data-nav="compliance">Compliance</a>
+      <a href="#/notifications" data-nav="notifications">Notifications</a>
+      <a href="#/gateway" data-nav="gateway">Token Gateway</a>
     </nav>
     <button class="theme-btn" id="theme-btn" type="button" aria-label="Change colour theme">Theme: System</button>
   </div>
@@ -349,7 +351,7 @@ pre.code {
     { id: 'bank-wallet', name: 'Bank-managed wallet (white label)', custody: 'Bank-controlled', signing: 'Bank HSM', kyc: 'Bank KYC', limit: 200e6, chains: ['besu', 'quorum', 'canton', 'kinexys'] }
   ];
   var TYPES = ['Mint', 'Redeem', 'Transfer', 'Treasury payout', 'Agent payment'];
-  var TX_PAGE = 12;
+  var TX_PAGE = 25;
   var COIN_SEL = ['USDC', 'PYUSD', 'RLUSD', 'USDP'];
   var TX_CHAINS = ['base', 'ethereum', 'arbitrum', 'solana', 'besu', 'canton', 'kinexys'];
   var TX_WALLETS = ['Fireblocks Wallet', 'Anchorage Custody', 'BitGo Wallet', 'Bank-managed wallet'];
@@ -421,10 +423,9 @@ pre.code {
     { name: 'Fiat Conversion Bridge Service', desc: 'Real-time forex quotes between fiat and stablecoins, with spread and expiry.', route: 'fx', live: true },
     { name: 'Gas Fee Calculator Service', desc: 'Estimate transaction cost on each chain for end users and administrators.', route: 'gas', live: true },
     { name: 'Audit & Reporting Service', desc: 'Transaction log, compliance outcomes and exportable reports.', route: 'audit', live: true },
-    { name: 'Token Gateway', desc: 'API gateway connecting mobile apps and front ends to backend services.', route: null, live: false },
-    { name: 'Notification Service', desc: 'Alerts and notifications routed to production support.', route: null, live: false },
-    { name: 'Compliance & Risk Engine', desc: 'Validation against compliance requirements and transaction risk scoring.', route: null, live: false },
-    { name: 'Custom Orchestration Services', desc: 'Orchestration built for a given client on top of the services above.', route: null, live: false }
+    { name: 'Token Gateway', desc: 'API gateway connecting mobile apps and front ends to backend services.', route: 'gateway', live: true },
+    { name: 'Notification Service', desc: 'Alerts and notifications routed to production support.', route: 'notifications', live: true },
+    { name: 'Compliance & Risk Engine', desc: 'Validation against compliance requirements and transaction risk scoring.', route: 'compliance', live: true }
   ];
 
   /* ---------- state ---------- */
@@ -432,8 +433,9 @@ pre.code {
     wiz: { step: 1, coin: null, provider: null, chain: null, wallets: [], chainTab: 'public', deploy: null, deployed: false, monthlyTx: 5000 },
     wallet: { wallet: 'fb-wallet', chains: ['base'], signing: 'MPC threshold (2 of 3)', limit: 1000000, dual: true, mm: { account: null, chainId: null, signature: null, message: null, signedAt: null, error: null }, registered: [{ wallet: 'Fireblocks Wallet', chain: 'base', status: 'Active', since: '2026-10-02' }, { wallet: 'Bank-managed wallet (white label)', chain: 'kinexys', status: 'Pending verification', since: '2026-10-14' }] },
     fx: { dir: 'on', from: 'USD', fiat: 'EUR', coin: 'USDC', amount: 10000, cur: 'EUR', quoteSecs: 30, quoteAt: NOW },
-    gas: { chain: 'base', type: 'Transfer', volume: 20000, congestion: 1, markup: 25, admin: false },
-    audit: { range: 30, status: 'all', chain: 'all', type: 'all', page: 0, showCsv: false }
+    gas: { chain: 'base', type: 'Transfer', volume: 20000, congestion: 1, markup: 2, admin: false },
+    audit: { range: 30, status: 'all', chain: 'all', type: 'all', page: 0, showCsv: false },
+    platform: { acknowledged: [] }
   };
 
   /* ---------- router ---------- */
@@ -456,9 +458,12 @@ pre.code {
     else if (r.name === 'fx') { html = pageFx(); after = startFxTicker; }
     else if (r.name === 'gas') { html = pageGas(); after = null; }
     else if (r.name === 'audit') { html = pageAudit(); after = null; }
+    else if (r.name === 'compliance') { html = pageCompliance(); after = null; }
+    else if (r.name === 'notifications') { html = pageNotifications(); after = null; }
+    else if (r.name === 'gateway') { html = pageGateway(); after = null; }
     else if (r.name === 'suite') { html = pageSuite(r.arg); after = null; }
     else { html = pageHome(); after = null; }
-    app.innerHTML = html + '<p class="foot">All catalogue entries, rates, balances and transactions on this page are simulated for demonstration. No provider, blockchain network, wallet or AWS account is connected, and no real funds move.</p>';
+    app.innerHTML = html + '<p class="foot"><span class="pill acc">Simulated data</span> All catalogue entries, rates, balances and transactions are simulated for demonstration. No provider, blockchain network, wallet or AWS account is connected, and no real funds move. · Demo build v1.0 · Environment: demo</p>';
     if (after) after();
     window.scrollTo(0, 0);
   }
@@ -478,11 +483,14 @@ pre.code {
         '<div style="margin-top:auto"><a class="btn ghost sm" href="#/suite/' + a.key + '">Open accelerator</a></div>' +
         '</article>';
     }).join('');
-    var infra = INFRA.map(function (s) {
+    var business = INFRA.slice(0, 5).map(function (s) {
       if (s.live) {
-        return '<a class="card-link" href="#/' + s.route + '"><article class="card live"><div class="meta"><span class="pill good">Live</span></div><h3>' + esc(s.name) + '</h3><p class="small muted">' + esc(s.desc) + '</p></article></a>';
+        return '<a class="card-link" href="#/' + s.route + '"><article class="card live"><div class="meta"><span class="pill good">Beta · demo</span></div><h3>' + esc(s.name) + '</h3><p class="small muted">' + esc(s.desc) + '</p></article></a>';
       }
       return '<article class="card dis" aria-disabled="true"><div class="meta"><span class="pill">Planned</span></div><h3>' + esc(s.name) + '</h3><p class="small muted">' + esc(s.desc) + '</p></article>';
+    }).join('');
+    var platform = INFRA.slice(5).map(function (s) {
+      return '<a class="card-link" href="#/' + s.route + '"><article class="card live"><div class="meta"><span class="pill good">Beta · demo</span></div><h3>' + esc(s.name) + '</h3><p class="small muted">' + esc(s.desc) + '</p></article></a>';
     }).join('');
     return '' +
       '<section class="hero"><div class="title-row"><div>' +
@@ -492,8 +500,9 @@ pre.code {
       '</div></div></section>' +
       '<section class="section"><div class="section-head"><div><div class="caps">Accelerator suite</div><h2>Choose an accelerator</h2></div></div>' +
       '<div class="grid">' + acc + '</div></section>' +
-      '<section class="section"><div class="section-head"><div><div class="caps">Integrated service infrastructure</div><h2>Open a service</h2></div><p class="small muted">Five services are live in this demo. The rest are shown for completeness.</p></div>' +
-      '<div class="grid">' + infra + '</div></section>';
+      '<section class="section"><div class="section-head"><div><div class="caps">Business services</div><h2>Open a service</h2></div><p class="small muted">Interactive demo views use simulated data.</p></div>' +
+      '<div class="grid">' + business + '</div></section>' +
+      '<section class="section"><div class="section-head"><div><div class="caps">Platform</div><h2>Shared platform services</h2></div></div><div class="grid">' + platform + '</div></section>';
   }
 
   /* ---------- suite overview ---------- */
@@ -510,6 +519,35 @@ pre.code {
       '<p class="lead">' + esc(a.desc) + '</p></section>' +
       '<section class="section split"><div class="panel"><h2>Who it is for</h2><p class="muted" style="margin-top:8px">' + esc(a.target) + '</p></div>' +
       '<div class="panel"><h2>Services in this accelerator</h2><div class="toolbar" style="margin-top:12px">' + links + '</div></div></section>';
+  }
+
+  /* Platform pages are read-only prototypes; decisions and delivery remain server-side. */
+  function pageCompliance() {
+    var cases = [
+      { id: 'CASE-2041', outcome: 'Review', score: 72, reason: 'AMOUNT_ABOVE_TYPICAL', message: 'Amount is above the 90-day median for this wallet.', subject: 'Quote qte_9a1' },
+      { id: 'CASE-2038', outcome: 'Block', score: 96, reason: 'ASSET_NOT_ELIGIBLE', message: 'Stablecoin is not eligible in the current catalogue.', subject: 'Configuration cfg_17' },
+      { id: 'CASE-2032', outcome: 'Allow', score: 12, reason: 'WITHIN_POLICY', message: 'All configured checks passed.', subject: 'Wallet wal_08' }
+    ];
+    return '<div class="crumbs"><a href="#/">Suite</a> / Compliance &amp; Risk Engine</div><div class="caps">Platform service · Simulated decisions</div>' +
+      '<h1 style="margin-top:6px">Compliance &amp; Risk Engine</h1><p class="lead">Review rule-based decisions and their reason codes. In production, this engine evaluates configuration and value-moving operations before they commit.</p>' +
+      '<div class="kpis" style="margin-top:22px"><div class="kpi"><div class="caps">Rule set</div><div class="v" style="font-size:18px">rs-2026.10.1</div></div><div class="kpi"><div class="caps">Open review cases</div><div class="v">1</div></div><div class="kpi"><div class="caps">Decision outcomes</div><div class="v" style="font-size:18px">Allow · Review · Block</div></div><div class="kpi"><div class="caps">Demo mode</div><div class="v" style="font-size:18px">Mock lists</div></div></div>' +
+      '<section class="section panel"><h2>Recent decisions</h2><div class="tbl" style="margin-top:12px"><table class="data"><thead><tr><th>Case</th><th>Subject</th><th>Outcome</th><th>Score</th><th>Reason code</th><th>Message</th><th>Action</th></tr></thead><tbody>' + cases.map(function (c) { var cls = c.outcome === 'Allow' ? 'good' : c.outcome === 'Review' ? 'warn' : 'bad'; return '<tr><td>' + c.id + '</td><td>' + c.subject + '</td><td><span class="pill ' + cls + '">' + c.outcome + '</span></td><td>' + c.score + '/100</td><td class="mono">' + c.reason + '</td><td>' + c.message + '</td><td>' + (c.outcome === 'Review' ? '<button class="btn line sm" disabled title="Case release requires an authenticated compliance role and an audited reason">Release / reject in console</button>' : c.outcome === 'Block' ? '<span class="small muted">Block cannot be overridden</span>' : '—') + '</td></tr>'; }).join('') + '</tbody></table></div><p class="small muted" style="margin-top:10px">Demo decisions are illustrative. Production checks, rule versioning, input hashes, case actions and audit records are enforced by the API.</p></section>';
+  }
+  function pageNotifications() {
+    var items = [
+      { id: 'ntf_4411', severity: 'critical', type: 'chain_tx.failed', title: 'Transaction failed on Base', body: 'USDC 10,000.00 · tx 0x3fa9c2d1...e87b40 · failed · insufficient gas', time: '2026-10-16 12:03 UTC', thread: 'bt_552' },
+      { id: 'ntf_4408', severity: 'info', type: 'chain_tx.confirmed', title: 'Transaction succeeded on Base', body: 'USDC 2,500.00 · tx 0xa01e9b12...a8d012 · confirmed', time: '2026-10-16 11:48 UTC', thread: 'bt_549' },
+      { id: 'ntf_4402', severity: 'high', type: 'compliance.decision_recorded', title: 'Compliance review required', body: 'Quote qte_9a1 · reason AMOUNT_ABOVE_TYPICAL', time: '2026-10-16 11:30 UTC', thread: 'case_2041' }
+    ];
+    return '<div class="crumbs"><a href="#/">Suite</a> / Notification Service</div><div class="caps">Platform service · Sandbox routing</div><h1 style="margin-top:6px">Notification Service</h1><p class="lead">Transaction and compliance alerts for production support. Messages use shortened hashes and omit full wallet addresses and customer identifiers.</p>' +
+      '<div class="toolbar" style="margin:18px 0"><span class="pill acc">Demo channel only</span><span class="pill">Email digest · Chat · Paging · Push</span><span class="pill">Acknowledgement stops escalation</span></div>' +
+      '<section class="panel"><h2>Recent notifications</h2><div class="grid" style="margin-top:12px">' + items.map(function (n) { var done = S.platform.acknowledged.indexOf(n.id) >= 0; var cls = n.severity === 'critical' ? 'bad' : n.severity === 'high' ? 'warn' : 'good'; return '<article class="card"><div class="meta"><span class="pill ' + cls + '">' + n.severity + '</span><span class="pill">' + n.type + '</span></div><h3>' + n.title + '</h3><p class="small">' + n.body + '</p><p class="small muted">' + n.time + ' · Thread ' + n.thread + '</p><div><button class="btn line sm" data-act="nack" data-v="' + n.id + '"' + (done ? ' disabled' : '') + '>' + (done ? 'Acknowledged' : 'Acknowledge') + '</button></div></article>'; }).join('') + '</div><p class="small muted" style="margin-top:12px">Delivery retries, on-call escalation and channel changes are simulated here; live routing requires server-side role checks and audited configuration.</p></section>';
+  }
+  function pageGateway() {
+    var routes = [['/v1/catalogue','Catalogue API','catalogue.read','Yes'],['/v1/selector','Selector API','selector.read, selector.write','No'],['/v1/wallets','Wallet Adapter','wallets.read, wallets.write','Yes'],['/v1/fx','Conversion API','fx.read, fx.execute','Yes'],['/v1/audit','Audit API','audit.read','No'],['/v1/compliance','Compliance API','compliance.read, compliance.decide','No'],['/v1/notifications','Notification API','notifications.read, notifications.ack','Yes'],['/v1/deployments','Deployment API','deploy.start, deploy.read','No']];
+    return '<div class="crumbs"><a href="#/">Suite</a> / Token Gateway</div><div class="caps">Platform service · Single client entry point</div><h1 style="margin-top:6px">Token Gateway</h1><p class="lead">The gateway is the public entry point for web and mobile clients. It validates identity, scopes, client version and rate limits before forwarding requests.</p>' +
+      '<div class="kpis" style="margin-top:22px"><div class="kpi"><div class="caps">Gateway health</div><div class="v" style="font-size:18px">Demo · reachable</div></div><div class="kpi"><div class="caps">Minimum client version</div><div class="v" style="font-size:18px">Web 1.4 · iOS 1.4 · Android 1.4</div></div><div class="kpi"><div class="caps">Body logging</div><div class="v" style="font-size:18px">Disabled</div></div></div>' +
+      '<section class="section panel"><h2>Route table</h2><div class="tbl" style="margin-top:12px"><table class="data"><thead><tr><th>Path</th><th>Upstream</th><th>Scopes</th><th>Mobile allowed</th></tr></thead><tbody>' + routes.map(function (r) { return '<tr><td class="mono">' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>'; }).join('') + '</tbody></table></div><p class="small muted" style="margin-top:10px">Contract reference: API_AND_DATA.md §14. Authentication, rate limits, version rejection and private network isolation are not implemented by this standalone demo.</p></section>';
   }
 
   /* ---------- stablecoin selector wizard ---------- */
@@ -687,8 +725,8 @@ pre.code {
       '<pre class="code">' + esc(JSON.stringify(cfg, null, 2)) + '</pre>' +
       '<div class="caps" style="margin:14px 0 6px">Infrastructure as code preview</div>' +
       '<pre class="code">' + esc(hcl) + '</pre>' +
-      '<div class="toolbar" style="margin-top:16px"><button class="btn" type="button" data-act="deploy"' + (w.deploy && w.deploy.done < steps.length ? ' disabled' : '') + '>Simulate deployment to AWS</button>' +
-      '<span class="small muted">Simulated only. Nothing is provisioned.</span></div>' + prog;
+      '<div class="toolbar" style="margin-top:16px"><button class="btn" type="button" disabled title="Available in Phase 4 after sandbox approval">Deploy to sandbox AWS · Planned</button>' +
+      '<span class="small muted">Deployment is disabled in this prototype, per the product requirements.</span></div>';
   }
   function bindWizard() { /* events are delegated from #app */ }
 
@@ -840,7 +878,7 @@ pre.code {
   }
 
   /* ---------- gas calculator ---------- */
-  var TX_MULT = { 'Transfer': 1, 'Mint or redeem': 1.4, 'Contract call': 2.2 };
+  var TX_MULT = { 'Transfer': 1, 'Mint': 1.4, 'Burn': 1.4, 'Redeem': 1.4 };
   function gasCost(chain, type, congestion, view) {
     var mult = TX_MULT[type] || 1;
     var cong = chain.kind === 'public' ? congestion : 1;
@@ -863,7 +901,7 @@ pre.code {
       '<label class="field">Transaction type<select data-input="gtype">' + types.map(function (t) { return '<option' + (t === s.type ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></label>' +
       '<label class="field">Transactions per month: <span class="num" data-out="vol">' + num(s.volume) + '</span><input type="range" min="1000" max="200000" step="1000" value="' + s.volume + '" data-input="gvol"></label>' +
       '<label class="field">Network congestion: <span class="num" data-out="cong">' + s.congestion.toFixed(1) + 'x</span><input type="range" min="1" max="5" step="0.1" value="' + s.congestion + '" data-input="gcong"></label>' +
-      '<label class="field">Administrator margin: <span class="num" data-out="mk">' + s.markup + '%</span><input type="range" min="0" max="100" step="1" value="' + s.markup + '" data-input="gmk"></label>' +
+      '<label class="field">Administrator margin: <span class="num" data-out="mk">' + s.markup + '%</span><input type="range" min="0" max="20" step="0.5" value="' + s.markup + '" data-input="gmk"></label>' +
       '<div class="seg" role="group" aria-label="View"><button type="button" data-act="gview" data-v="user" aria-pressed="' + (!s.admin) + '">End-user view</button><button type="button" data-act="gview" data-v="admin" aria-pressed="' + (s.admin) + '">Administrator view</button></div>' +
       '</div><p class="small muted" style="margin-top:12px">Congestion applies to public chains only. Permissioned chains have fixed node costs.</p></section>' +
       '<section class="panel" id="gas-out">' + gasOut() + '</section>' +
@@ -949,7 +987,7 @@ pre.code {
       '<h1 style="margin-top:6px">Audit and Reporting</h1>' +
       '<p class="lead">A tamper-evident log of every stablecoin transaction, with compliance outcomes. Filter it, check the daily pattern, and export the rows you need.</p>' +
       '<div class="toolbar" style="margin:22px 0 16px">' +
-      '<label class="field">Period<select data-input="arange"><option value="7"' + (a.range === 7 ? ' selected' : '') + '>Last 7 days</option><option value="30"' + (a.range === 30 ? ' selected' : '') + '>Last 30 days</option></select></label>' +
+      '<label class="field">Period<select data-input="arange"><option value="7"' + (a.range === 7 ? ' selected' : '') + '>Last 7 days</option><option value="30"' + (a.range === 30 ? ' selected' : '') + '>Last 30 days</option><option value="90"' + (a.range === 90 ? ' selected' : '') + '>Last 90 days</option></select></label>' +
       '<label class="field">Status<select data-input="astatus">' + ['all', 'Confirmed', 'Pending', 'Failed'].map(function (x) { return '<option value="' + x + '"' + (a.status === x ? ' selected' : '') + '>' + (x === 'all' ? 'All statuses' : x) + '</option>'; }).join('') + '</select></label>' +
       '<label class="field">Chain<select data-input="achain"><option value="all">All chains</option>' + CHAINS.filter(function (c) { return TX_CHAINS.indexOf(c.id) >= 0; }).map(function (c) { return '<option value="' + c.id + '"' + (a.chain === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>' +
       '<label class="field">Type<select data-input="atype"><option value="all">All types</option>' + TYPES.map(function (x) { return '<option' + (a.type === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></label>' +
@@ -1039,6 +1077,7 @@ pre.code {
     else if (act === 'apage') { S.audit.page += Number(v); render(); }
     else if (act === 'copycsv') { copyCsv(); }
     else if (act === 'hidecsv') { S.audit.showCsv = false; render(); }
+    else if (act === 'nack') { if (S.platform.acknowledged.indexOf(v) < 0) S.platform.acknowledged.push(v); render(); toast('Notification acknowledged in demo'); }
   });
 
   app.addEventListener('input', function (e) {
