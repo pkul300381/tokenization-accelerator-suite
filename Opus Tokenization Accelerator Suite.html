@@ -100,8 +100,8 @@ code, .mono { font-family: var(--mono); font-size: 13px; }
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 .top-in { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding-block: 12px; flex-wrap: wrap; }
-.brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; color: var(--fg); }
-.brand b { font-size: 18px; letter-spacing: 0.04em; color: var(--accent); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--fg); }
+.brand img { display: block; width: 104px; height: auto; max-height: 34px; object-fit: contain; }
 .brand span { font-size: 13px; color: var(--muted); }
 .nav { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
 .nav a {
@@ -240,7 +240,7 @@ pre.code {
 
 <header class="top">
   <div class="top-in">
-    <a class="brand" href="#/" aria-label="Opus Tokenization Accelerator Suite home"><b>OPUS</b><span>Tokenization Accelerator Suite</span></a>
+    <a class="brand" href="#/" aria-label="Opus Tokenization Accelerator Suite home"><img src="Opus-logo.webp" alt=""><span>Tokenization Accelerator Suite</span></a>
     <nav class="nav" aria-label="Services">
       <a href="#/" data-nav="home">Suite</a>
       <a href="#/stablecoin" data-nav="stablecoin">Stablecoin Selector</a>

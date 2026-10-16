@@ -9,7 +9,7 @@ Build a production-grade web application that lets Opus teams and their clients 
 1. **Stablecoin Selector**: choose a US-listed stablecoin, an infrastructure (custody and signing) provider, a layer-2 or permissioned ledger, and wallets. Output a validated configuration that can later drive deployment.
 2. **Wallet Adapter**: register, verify and manage wallets across custody types and chains.
 3. **Fiat Conversion Bridge**: quote and track fiat-to-stablecoin and stablecoin-to-fiat conversions.
-4. **Gas Fee Calculator**: estimate per-transaction network cost and infrastructure fees, for end users and for administrators.
+4. **Gas Fee Calculator**: estimate per-transaction network cost and infrastructure fees, for end users and for administrators. A service that enables administrators and end-users to calculate how much fees a given transaction may cost on the L2 chain.
 5. **Audit and Reporting**: record every operation and produce filterable, exportable compliance reports.
 6. **Compliance & Risk Engine**: a set of services that validates each operation against compliance requirements and evaluates the risk of each transaction. It returns an allow, review or block decision with reasons.
 7. **Notification Service**: a set of services that sends alerts to production support personnel. A notification is raised when a transaction is initiated on the blockchain, and a second notification is raised when that transaction succeeds or fails.
