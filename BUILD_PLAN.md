@@ -15,6 +15,7 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 - **F0-05 Database and migrations.** PostgreSQL in Docker Compose; migrations for the tables in `API_AND_DATA.md` section 9; seed script for catalogue data; audit table with insert-and-select-only role. Tests: migration up and down on an empty database; seed idempotent. Exit check: `scripts/seed` runs twice with no error and the same row counts.
 - **F0-06 Web shell.** Vite React app, router, layout with header, theme toggle (system, light, dark), footer with version and environment, a "Simulated data" badge component. Tests: render test for each route; axe accessibility check on the shell. Exit check: shell renders at 400 px with no horizontal scroll.
 - **F0-07 Dev environment and infra baseline.** Terraform for dev: VPC, RDS, ECS cluster, ECR, S3 and CloudFront for the web app, Secrets Manager, KMS keys. No production resources. Exit check: `terraform plan` clean in dev; apply to dev succeeds.
+- **F0-08 Event bus and gateway skeleton.** Local event bus (Redis Streams) with the outbox pattern; gateway app with health and version endpoints; route table file in `packages/shared`. Tests: the outbox row and the domain row commit together or not at all; health and version return 200.
 
 **Gate 0:** CI green, dev environment reachable, shell shows the suite title and five disabled service cards.
 
@@ -26,6 +27,8 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 - **F1-02 Admin catalogue update.** `PUT /v1/admin/catalogue/stablecoins/{code}` with audit row. Tests: admin allowed, architect forbidden (403), audit row present.
 - **F1-03 Landing page.** Suite title, five service cards (status Live, Beta or Planned per `PRD.md` section 4), keyboard navigation, reduced-motion support. Playwright test for card navigation.
 - **F1-04 Authentication and RBAC middleware.** Role claims, endpoint-level role checks, UI route guards. Tests: each role against each endpoint in a matrix (generated from `API_AND_DATA.md`).
+- **F1-05 Token Gateway routing and auth.** Route table proxy to the API service; OIDC validation; scope checks per route. Tests: a missing scope returns 403; an expired token returns 401; a valid token with scope is forwarded with the request ID.
+- **F1-06 Version gate and device registration stub.** `X-Client-Platform` and `X-Client-Version` checks returning 426 below the minimum; device registration and revocation endpoints. Tests: below-minimum version gets 426; revoked device token is rejected.
 
 **Gate 1:** catalogue endpoints pass tests; role matrix test passes; landing page passes accessibility check.
 
@@ -70,8 +73,30 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 - **S5-03 Exceptions.** Rules that open exceptions (expired execution attempt, limit breach, failed screening). Tests per rule.
 - **S5-04 CSV export.** Synchronous below 100,000 rows; job above. Tests: filter recorded; row count; the export itself is audited.
 - **S5-05 Audit UI.** Filters, KPIs, exceptions list, paginated table, export button with status. Playwright test for filter and export.
+### S6 Compliance and Risk Engine
 
-**Gate 2:** all five services pass unit, API and end-to-end tests in sandbox; the cross-cutting audit test passes; accessibility checks pass on every page; a walkthrough of the golden path by an Opus architect is recorded.
+- **C6-01 Rule engine and rule set versions.** Rules as versioned data; evaluation function with stable reason codes; decision storage. Tests: the same inputs and rule set give the same outcome; an unknown reason code is rejected.
+- **C6-02 Platform checks and risk factors.** Eligibility, limits, screening against a mock list, KYC status from a mock, amount and velocity factors. Tests: one per factor with explicit expected scores; fail-closed behaviour when the screening mock is down.
+- **C6-03 Pre-transaction hook.** Calls from S1 validate and save, S2 register, S3 quote execute, and deployment start. Tests: a block prevents the write; a review creates a case; both are audited.
+- **C6-04 Compliance case queue.** Queue, release and reject with a mandatory reason; optional second approver. Tests: Playwright test for the release flow; the block decision has no override control, and the API returns `block_not_overridable` for an override attempt.
+
+### S7 Notification Service
+
+- **N7-01 Chain transaction watcher.** Tracks submitted transactions through the chain adapter; publishes `chain_tx` events with the confirmation depth for each chain. Tests with the mock chain for the sequences submitted, confirmed, and submitted then failed.
+- **N7-02 Notification pipeline.** Consumer, route matching, dedupe key, thread key, templates without sensitive fields. Tests: a duplicate event yields one notification; a regex test confirms no full wallet address appears in any template.
+- **N7-03 Channel adapters.** E-mail, chat webhook, paging and push adapters with mocks and a local log; retries with backoff. Tests: adapter contract tests; after the retry limit, an audit entry is written.
+- **N7-04 Escalation and acknowledgement.** Escalation timers; acknowledgement stops escalation. Tests with a fake clock: an unacknowledged critical notification escalates after 15 minutes; an acknowledged one does not.
+- **N7-05 Routing console.** Admin screens for routes, channels and on-call tiers, with a labelled test-send button. Tests: Playwright test for creating a route and sending a test.
+
+### S8 Token Gateway
+
+- **G8-01 Route table and proxy.** One route table in `packages/shared`; proxy to upstream services; contract test that the table matches section 14 of `API_AND_DATA.md`.
+- **G8-02 Auth, scopes and rate limits.** JWT validation, scope checks, and per-user, per-device and per-app limits in Redis. Tests: a missing scope returns 403; a limit breach returns 429 with Retry-After.
+- **G8-03 Version gate and mobile headers.** Required headers, 426 below minimum, push token registration and revocation through the gateway. Tests: below-minimum version gets 426; logout removes the push token.
+- **G8-04 Network isolation test.** Probe every domain service port from outside the VPC. Exit check: every probe fails except the gateway's HTTPS port.
+
+
+**Gate 2:** all eight services (S1 to S8) pass unit, API and end-to-end tests in sandbox; the cross-cutting audit test passes; accessibility checks pass on every page; a walkthrough of the golden path by an Opus architect is recorded.
 
 ## Phase 3: Hardening and pilot (week 11 to 14)
 
@@ -80,6 +105,7 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 - **F3-03 Observability.** Dashboards, alerts and runbooks for the top five failure modes.
 - **F3-04 Compliance review.** Compliance walks through the audit schema, exception rules, retention setting and stablecoin catalogue. Items resolved or recorded in `docs/OPEN_QUESTIONS.md`.
 - **F3-05 Pilot.** Two architects and one client operations team use the suite in staging with demo data, then with a sandbox custody account. Feedback recorded in `docs/PILOT_FEEDBACK.md`.
+- **F3-06 Notification drill.** Trigger a failed sandbox transaction; confirm the on-call engineer is paged within 60 seconds and that acknowledgement stops escalation. Record the result in `docs/runbooks/`.
 
 **Gate 3:** no open critical or high security findings; pilot rating of 4 or higher (`PRD.md` section 9); compliance sign-off on catalogue and retention.
 
@@ -100,6 +126,7 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 - **P5-02 Live adapter enablement.** Enable one custody provider and one public chain in production, behind a flag, after vendor due diligence [VERIFY]. Tests: adapter contract tests against the vendor's sandbox.
 - **P5-03 Production deployment automation.** Two-approver rule, change ticket reference, production state machine. Tests: production apply blocked without two approvals.
 - **P5-04 Launch checklist.** Legal, compliance, security, operations and support sign-off recorded in `docs/LAUNCH.md`.
+- **P5-05 Production gateway and channels.** Production Token Gateway behind WAF with the production route table; production paging and chat channels connected and tested with a drill.
 
 **Gate 5:** all sign-offs recorded; production smoke test passes; rollback tested.
 
@@ -112,4 +139,4 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 
 ## Definition of done for the programme
 
-The suite is in production with live adapters enabled for at least one custody provider and one public chain, the five services are live, an audit export has been reviewed by compliance, and the deployment automation has run successfully in the production account with two approvals and a change ticket.
+The suite is in production with live adapters enabled for at least one custody provider and one public chain, the eight services are live, notifications fire for live transactions, an audit export has been reviewed by compliance, and the deployment automation has run successfully in the production account with two approvals and a change ticket.

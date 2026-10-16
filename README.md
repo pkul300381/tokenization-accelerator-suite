@@ -31,7 +31,7 @@ Build in the order set out in `BUILD_PLAN.md`. Do not ask the assistant to gener
 
 ## Assumptions in this pack
 
-The pack assumes the scope in the Opus Tokenization Accelerator Suite prototype: five services (Stablecoin Selector, Wallet Adapter, Fiat Conversion Bridge, Gas Fee Calculator, Audit and Reporting), a service selection shell, and an eventual goal of automating deployment of the connected tools to AWS.
+The pack assumes the scope in the Opus Tokenization Accelerator Suite prototype and its extension. It has eight services. Five are business services: Stablecoin Selector, Wallet Adapter, Fiat Conversion Bridge, Gas Fee Calculator, and Audit and Reporting. Three are platform services: the Compliance & Risk Engine, the Notification Service, and the Token Gateway that connects web and mobile clients to the back end. The pack also includes a service selection shell and an eventual goal of automating deployment of the connected tools to AWS.
 
 Vendor features, chain parameters, stablecoin listing status and regulatory positions are not verified in this pack. Every such item is marked **[VERIFY]** and must be confirmed against current vendor documentation and by Opus compliance and legal before build or launch. Nothing in this pack authorises moving real funds.
 

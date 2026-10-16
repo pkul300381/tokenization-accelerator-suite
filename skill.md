@@ -58,6 +58,8 @@ Run and record the result of each of the following. If a check cannot run in you
 4. For UI tasks: end-to-end test for the changed flow: `pnpm --filter web e2e`
 5. Secret scan: confirm no key-like strings were added (`git diff` review, plus the CI secret scanner if available).
 6. Contract check: every endpoint you touched is in `API_AND_DATA.md` with matching request and response shapes.
+7. Route and event check: any new public route is in the gateway route table (`packages/shared/routes.ts`) and section 14 of `API_AND_DATA.md`; any new event name is in section 10 of `API_AND_DATA.md`.
+8. Compliance check: any write that moves value, changes a configuration or registers a wallet calls the Compliance & Risk Engine, and the decision is recorded. Run the cross-cutting test that proves this.
 
 ### Step 7: Verify the user-facing behaviour
 
@@ -104,6 +106,18 @@ Every state change writes an immutable audit row. Reports are generated from the
 
 The deployment run takes a `DeploymentBlueprint`, renders Terraform from templates, runs a plan, waits for approval, applies, and records each step. It runs as a background job with resumable steps. The first implementation targets a sandbox AWS account only. Do not implement production apply until Phase 5 sign-off.
 
+### Compliance and Risk Engine (S6)
+
+Build rule sets as data, never as branches in handler code. Every decision carries a stable reason code, a score, the rule set version and an input hash. A `block` must be impossible to override through any endpoint, and the test for that is required, not optional. When a mandatory data source is down, follow the fail-closed policy in `ARCHITECTURE.md` section 13 and test it. Never copy raw customer data into the decision record.
+
+### Notification Service (S7)
+
+Every notification is driven by an event with an ID, and the dedupe key is built from the event ID plus the transaction hash. Templates are rendered from an allow-list of fields, so a new field cannot leak into chat or paging by accident. Test escalation with a fake clock, not real timers. The transaction watcher writes its row and publishes its event through the outbox, so an event never exists without its row. A failed transaction always reaches a human; if a channel fails, the failure itself is alerted through another channel.
+
+### Token Gateway (S8)
+
+The gateway holds routing, authentication, scopes, limits and the version gate, and nothing else. Routes are added in the route table first, and the contract test then forces the documentation to match. Never log bodies. Never let a route bypass the gateway by calling a domain service from a client. Mobile clients get short-lived tokens; the gateway never stores signing keys.
+
 ## Common failure modes to avoid
 
 - Writing float arithmetic for money or fees.
@@ -114,6 +128,11 @@ The deployment run takes a `DeploymentBlueprint`, renders Terraform from templat
 - Showing simulated numbers without a label.
 - Adding a dependency to solve a one-line problem.
 - Reporting "tests pass" without running them.
+- Letting a client call a domain service directly, bypassing the Token Gateway.
+- Adding an override path for a `block` compliance decision, in the UI or the API.
+- Putting full wallet addresses, customer identifiers or secrets into a notification, a chat message or a log line.
+- Sending a second page for a retried event because the dedupe key was missing.
+- Adding a public route in code without updating the route table and the contract test.
 
 ## Output discipline
 

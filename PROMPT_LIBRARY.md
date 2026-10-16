@@ -150,6 +150,35 @@ Compare the endpoints in apps/api with API_AND_DATA.md. List any endpoint that i
 Propose the exact text changes to API_AND_DATA.md. Do not edit the document until I approve.
 ```
 
+## 16. Token Gateway route table and contract test (G8-01)
+
+```
+Task G8-01. Create packages/shared/routes.ts as the single route table for the Token Gateway.
+Each entry has: path prefix, upstream service, required scopes, rate limit class, and mobile allowed (boolean).
+Use the entries in API_AND_DATA.md section 14 exactly. Do not add a route that is not in that section; if you think one is missing, list it and stop.
+Write a contract test that parses section 14 of API_AND_DATA.md and fails if the table and the document differ in path, upstream, scopes or mobile flag.
+Show the file, the test, and the output of the test run.
+```
+
+## 17. Compliance rule evaluation (C6-01)
+
+```
+Task C6-01. Implement the Compliance & Risk Engine rule evaluator in apps/api/src/compliance.
+Rule sets are versioned JSON data. The evaluator returns outcome, score (0 to 100), reasons (stable codes plus display messages), ruleSetVersion and evaluatedAt, as in API_AND_DATA.md section 12.
+Requirements: the same inputs and rule set give the same output; an unknown reason code is rejected at build time; a block outcome has no override path.
+Write tests with explicit expected scores and outcomes. Use a fake clock for evaluatedAt.
+Do not call the screening or KYC adapters directly; accept their results as input and test the fail-closed behaviour from ARCHITECTURE.md section 13.
+```
+
+## 18. Notification dedupe and escalation (N7-02, N7-04)
+
+```
+Task N7-02 and N7-04. Implement the notification consumer with route matching, a dedupe key (event ID plus transaction hash), a thread key (transaction row ID), and escalation timers.
+Escalation rules: critical unacknowledged after 15 minutes moves to the next on-call tier; high unacknowledged after 60 minutes moves to the support lead; acknowledgement stops escalation.
+Templates may only use fields on the allow-list in API_AND_DATA.md section 13. Full wallet addresses must never appear; add a test that renders each template with a full address in the input and checks the output.
+Use a fake clock for all timer tests. Show the test output and list any [VERIFY] items you added to docs/OPEN_QUESTIONS.md.
+```
+
 ## Tips for either assistant
 
 - Keep one task per session and start a fresh session for each phase, so the context stays focused.

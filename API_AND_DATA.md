@@ -5,7 +5,8 @@ Version 1.0 · 2026-10-16 · All endpoints are under `/v1`. JSON in and out. Err
 ## 1. Conventions
 
 - Authentication: `Authorization: Bearer <token>` (OIDC access token). Every route except `GET /v1/health` requires it.
-- Roles: `architect`, `operations`, `compliance`, `admin`, `viewer`. Each endpoint lists allowed roles.
+- Gateway: all clients call the Token Gateway (section 14). Clients send `X-Client-Platform` (web, ios or android) and `X-Client-Version`. A missing or below-minimum value returns 426 Upgrade Required.
+- Roles: `architect`, `operations`, `compliance`, `admin`, `viewer`, `production_support`. Each endpoint lists allowed roles.
 - Idempotency: write endpoints accept `Idempotency-Key` (UUID). Repeat requests with the same key return the original response for 24 hours.
 - Pagination: `?limit=` (default 25, max 100) and `?cursor=`. Responses include `nextCursor`.
 - Timestamps: ISO 8601 UTC, for example `2026-10-16T12:00:00Z`.
@@ -268,12 +269,122 @@ Tables, primary keys in bold in the description:
 - `deployment_steps`: **id**, run_id, name, state, started_at, ended_at, detail.
 - `idempotency_keys`: **key**, tenant_id, route, response_hash, response_body, created_at, expires_at.
 
+- `compliance_rules`: **id**, rule_set_id, version, definition (jsonb), status, created_by, created_at. Versioned; a published version is never edited in place.
+- `compliance_decisions`: **id**, tenant_id, check_type, subject_type, subject_id, outcome, score, reasons (jsonb), rule_set_version, input_hash, evaluated_at.
+- `compliance_cases`: **id**, decision_id, status (open, released, rejected), released_by, reason, updated_at.
+- `blockchain_transactions`: **id**, tenant_id, chain, tx_hash, subject_type, subject_id, status (submitted, confirmed, failed), amount, asset, submitted_at, confirmed_at, failed_reason, explorer_url.
+- `notification_routes`: **id**, tenant_id, event_type, min_severity, chain (nullable), channel_ids (array), escalation_policy_id.
+- `notification_channels`: **id**, tenant_id, type (email, chat, paging, push), target_ref (a secret reference, never the raw target), status.
+- `notifications`: **id**, tenant_id, event_id, dedupe_key, thread_key, severity, channel_id, status (queued, sent, failed, acknowledged, escalated), attempts, sent_at, acknowledged_by, acknowledged_at.
+- `devices`: **id**, user_id, platform, push_token_ref, app_version, last_seen_at, revoked_at.
+- `gateway_clients`: **id**, name, platform, status, min_version, scopes.
+
 Money columns are `numeric(38,18)` in the database and returned as strings. Indexes: audit_events on (tenant_id, occurred_at), (entity_type, entity_id); wallets on (tenant_id, chain); conversions on (state, updated_at).
 
 ## 10. Events (internal)
 
-Domain events are published to a queue after the database commit (transactional outbox). Names: `configuration.saved`, `blueprint.versioned`, `wallet.registered`, `wallet.verified`, `quote.created`, `quote.expired`, `conversion.state_changed`, `export.completed`, `deployment.state_changed`. Consumers must be idempotent.
+Domain events are published to a queue after the database commit (transactional outbox). Names: `configuration.saved`, `blueprint.versioned`, `wallet.registered`, `wallet.verified`, `quote.created`, `quote.expired`, `conversion.state_changed`, `export.completed`, `deployment.state_changed`, `chain_tx.submitted`, `chain_tx.confirmed`, `chain_tx.failed`, `compliance.decision_recorded`, `notification.delivery_failed`. Consumers must be idempotent.
 
 ## 11. Rate limits
 
-Quote creation: 30 per minute per user. Wallet registration: 10 per minute per user. Deployment start: 5 per hour per tenant. Export creation: 10 per hour per user. Returned as 429 with `Retry-After`.
+Quote creation: 30 per minute per user. Wallet registration: 10 per minute per user. Deployment start: 5 per hour per tenant. Export creation: 10 per hour per user. Returned as 429 with `Retry-After`. These limits are enforced at the Token Gateway, per user, per device and per client application.
+
+## 12. Compliance and risk engine (S6)
+
+| Method | Path | Roles | Purpose |
+|---|---|---|---|
+| POST | `/v1/compliance/evaluate` | architect, operations, admin | Dry-run a check without writing |
+| GET | `/v1/compliance/decisions/{id}` | compliance, architect, viewer | Decision with reasons, score and rule set version |
+| GET | `/v1/compliance/cases` | compliance | Review queue. Query: `status`, `limit`, `cursor` |
+| POST | `/v1/compliance/cases/{id}/release` | compliance | Release a review case. Body: `reason` (required, minimum 20 characters) |
+| POST | `/v1/compliance/cases/{id}/reject` | compliance | Reject a review case. Body: `reason` (required) |
+| GET | `/v1/compliance/rule-sets` | compliance, admin | Rule set versions |
+| POST | `/v1/compliance/rule-sets` | compliance | Publish a new rule set version (second approver [VERIFY]) |
+| PUT | `/v1/compliance/thresholds` | compliance | Update risk thresholds; applies to new decisions only |
+
+Evaluate request:
+
+```json
+{
+  "checkType": "quote.execute",
+  "subject": { "type": "quote", "id": "qte_9a1" },
+  "context": { "amount": "10000.00", "asset": "USDC", "walletId": "wal_01", "chain": "base" }
+}
+```
+
+Response:
+
+```json
+{
+  "outcome": "review",
+  "score": 72,
+  "reasons": [{ "code": "AMOUNT_ABOVE_TYPICAL", "message": "Amount is above the 90-day median for this wallet." }],
+  "ruleSetVersion": "rs-2026.10.1",
+  "evaluatedAt": "2026-10-16T12:00:00Z"
+}
+```
+
+Reason codes are stable identifiers; messages can change. An override request against a block decision returns 403 with code `block_not_overridable`.
+
+## 13. Notifications (S7)
+
+| Method | Path | Roles | Purpose |
+|---|---|---|---|
+| GET | `/v1/notifications` | operations, architect, compliance, production_support, admin | Notifications in the caller's scope. Query: `severity`, `status`, `chain` |
+| POST | `/v1/notifications/{id}/acknowledge` | production_support, admin | Acknowledge; stops escalation |
+| GET | `/v1/notifications/transactions/{txId}` | production_support, compliance, admin | Transaction timeline with linked notifications |
+| GET | `/v1/notifications/routes` | admin, production_support | List routes |
+| PUT | `/v1/notifications/routes/{id}` | admin | Update event types, minimum severity, chains, channels and escalation policy |
+| POST | `/v1/notifications/channels` | admin | Add a channel; the target is stored as a secret reference |
+| POST | `/v1/notifications/channels/{id}/test` | admin, production_support | Send a labelled test message |
+| POST | `/v1/notifications/devices` | any authenticated user | Register a push token for the calling device |
+| DELETE | `/v1/notifications/devices/{id}` | any authenticated user | Revoke a device's push token |
+
+Notification object:
+
+```json
+{
+  "id": "ntf_4411",
+  "eventId": "evt_chain_9981",
+  "type": "chain_tx.failed",
+  "severity": "critical",
+  "title": "Transaction failed on Base",
+  "body": "USDC 10,000.00 · tx 0x3fa9c2d1...e87b40 · status failed · reason: insufficient gas",
+  "chain": "base",
+  "txHash": "0x3fa9c2d1...e87b40",
+  "consoleLink": "https://console.example/tx/bt_552",
+  "threadKey": "bt_552",
+  "createdAt": "2026-10-16T12:03:10Z"
+}
+```
+
+## 14. Token Gateway
+
+The gateway forwards each public path to its upstream service after checking the token, scopes, version and rate limits. The route table is kept in `packages/shared/routes.ts`, and this section is its human-readable copy.
+
+| Path prefix | Upstream | Scopes | Mobile allowed |
+|---|---|---|---|
+| `/v1/gateway` | gateway itself | none (public) | yes (health and version only) |
+| `/v1/catalogue` | api | catalogue.read | yes |
+| `/v1/selector` | api | selector.read, selector.write | no [VERIFY] |
+| `/v1/wallets` | api (S2) | wallets.read, wallets.write | yes |
+| `/v1/fx` | api (S3) | fx.read, fx.execute | yes |
+| `/v1/gas` | api (S4) | gas.read | yes |
+| `/v1/audit` | api (S5) | audit.read | no |
+| `/v1/compliance` | api (S6) | compliance.read, compliance.decide | no |
+| `/v1/notifications` | api (S7) | notifications.read, notifications.ack | yes |
+| `/v1/deployments` | api | deploy.start, deploy.read | no |
+
+Gateway endpoints: `GET /v1/gateway/health` returns 200 when the gateway can reach its dependencies. `GET /v1/gateway/version` returns the minimum supported version per platform.
+
+Version rejection:
+
+```json
+{
+  "type": "https://api.opus-tac.example/problems/upgrade-required",
+  "title": "Upgrade required",
+  "status": 426,
+  "detail": "Client version 1.2.0 on ios is below the minimum 1.4.0.",
+  "requestId": "req_7f3a"
+}
+```

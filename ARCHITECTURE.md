@@ -15,43 +15,54 @@ External systems the suite depends on, all reached through adapters:
 - FX rate and liquidity provider [VERIFY].
 - Sanctions screening provider [VERIFY].
 - KYC provider (reference identifiers only) [VERIFY].
+- Notification channels: e-mail, a chat platform and a paging service [VERIFY which tools Opus and each client use].
+- Mobile clients (iOS and Android) calling the Token Gateway, and the push notification service for those clients [VERIFY].
 - AWS (sandbox first, production later) for hosting and for deployment automation.
 
 ## 2. Logical architecture
 
 ```
-           +-----------------------------+
-Browser -->| Web app (React, static)     |  CloudFront + S3
-           +-------------+---------------+
-                         | HTTPS (JSON)
-           +-------------v---------------+
-           | API gateway / ALB + WAF     |
-           +-------------+---------------+
-                         |
-     +-------------------v-------------------+
-     | API service (Fastify)                 |  ECS Fargate
-     |  - auth & RBAC                        |
-     |  - S1 selector  - S2 wallets          |
-     |  - S3 fx bridge - S4 gas engine       |
-     |  - S5 audit & reports                 |
-     +----+--------------+-----------+-------+
-          |              |           |
-   +------v-----+  +-----v----+  +---v-----------------+
-   | PostgreSQL |  |  Redis   |  | Job workers (BullMQ) |  ECS Fargate
-   | (RDS)      |  |          |  | - report export      |
-   +------------+  +----------+  | - deployment runs    |
-                                 | - quote expiry       |
-                                 +---+------------------+
-                                     |
-                 +-------------------v--------------------+
-                 | Adapter layer                          |
-                 |  custody · chain · fx · gas · kyc ·    |
-                 |  screening · aws-deploy                |
-                 |  (each has a real and a mock impl)     |
-                 +----------------------------------------+
+  Web app (React)                    Mobile apps (iOS, Android)
+        |                                       |
+        +----------------- HTTPS ----------------+
+                            |
+          +-----------------v------------------+
+          | Token Gateway (apps/gateway)       |  ECS Fargate behind WAF and ALB
+          | OIDC check, scopes, rate limits,   |
+          | version gate, request IDs, routing |
+          +-----------------+------------------+
+                            | private network only
+          +-----------------v-------------------------------------+
+          | API service (apps/api, Fastify)                     |  ECS Fargate
+          |  S1 selector    S2 wallets      S3 fx bridge        |
+          |  S4 gas engine  S5 audit        S6 compliance & risk|  (called before
+          |  S7 notification module (consumer and routing)      |   every value write)
+          +-----+------------------+------------------+---------+
+                |                  |                  |
+          +-----v------+    +------v-----+    +-------v-------------------+
+          | RDS        |    | Redis      |    | Event bus                 |
+          | PostgreSQL |    | cache,     |    | (EventBridge + SQS;       |
+          | + outbox   |    | rate limit |    |  Redis Streams in dev)    |
+          +------------+    +------------+    +-------+-------------------+
+                                                      |
+                                       +--------------v--------------+
+                                       | Workers (ECS)               |
+                                       |  - chain transaction watcher|
+                                       |  - notification delivery    |
+                                       |  - report export            |
+                                       |  - deployment runs          |
+                                       +--------------+--------------+
+                                                      |
+                             +------------------------v---------------------------+
+                             | Adapter layer (each adapter has a real and a mock)|
+                             | custody · chain · fx · gas · kyc · screening ·    |
+                             | notify (e-mail, chat, paging, push) · aws-deploy  |
+                             +---------------------------------------------------+
 ```
 
-The web app is a static single-page application served from object storage behind a CDN. The API is a stateless service behind a load balancer. Background workers run the same code base with a different entry point. Adapters are the only place where external systems are called.
+The Token Gateway is the only public entry point. Web and mobile clients never call a domain service directly. The API service calls the Compliance & Risk Engine in-process before each value-moving or configuration write. The chain transaction watcher observes submitted, confirmed and failed transactions through the chain adapter and publishes each change as an event. The Notification Service consumes those events and the compliance decisions that need attention.
+
+The web app is a static single-page application served from object storage behind a CDN. Background workers run the same code base with a different entry point. Adapters are the only place where external systems are called.
 
 ## 3. Components
 
@@ -63,6 +74,10 @@ The web app is a static single-page application served from object storage behin
 | `packages/shared` | Schemas, types, catalogue seed, constants | Single source of truth for contracts. |
 | `packages/adapters` | Adapter interfaces and implementations | Real adapters are feature-flagged per environment. |
 | `infra/terraform` | AWS environments | Dev, staging, prod in separate accounts. |
+| `apps/gateway` | Token Gateway | Route table, OIDC validation, scope checks, rate limits, version gate, request IDs, CORS. No business logic or data storage. Section 12. |
+| `apps/api` compliance module | Compliance & Risk Engine (S6) | Rule sets as versioned data, evaluation, decisions, review cases. Section 13. |
+| `apps/api` notifications module and `workers` | Notification Service (S7) | Event consumer, routing, dedupe, escalation, delivery through adapters, chain transaction watcher. Section 14. |
+| `packages/events` | Event contracts | Event names, payload schemas, outbox writer, idempotent subscriber helper. |
 
 ## 4. Adapter design
 
@@ -80,6 +95,8 @@ Custody adapter interface (illustrative; the real signature is defined in `packa
 Chain adapter: `estimateFee(chain, txType, params)`, `getBlockTime(chain)`, `validateAddress(chain, address)`, `getTxStatus(chain, txHash)`.
 
 Each adapter method returns a typed result or a typed error. Adapters never throw raw vendor errors into the domain layer. They map vendor errors to `AdapterError` with a code, a retryable flag, and a correlation ID.
+
+Two adapter families support the platform services. The screening adapter exposes `screenAddress(chain, address)`, which returns the outcome, the list version and a timestamp. The notification adapter exposes `send(channel, message)`, which returns a delivery result; it has implementations for e-mail, a chat webhook, a paging service and push, and the mock writes each message to a local log.
 
 ## 5. Ledger options
 
@@ -101,6 +118,8 @@ The Stablecoin Selector does not make the recommendation. It shows the trade-off
 6. The user saves. The server writes a new blueprint version and an audit row.
 7. Export. `GET /v1/selector/blueprints/{id}/versions/{n}` returns canonical JSON.
 8. Later phase: `POST /v1/deployments` with a blueprint version starts a background run.
+9. Before any write that moves value or configures a ledger, the API calls the Compliance & Risk Engine. An `allow` continues, a `block` stops the write, and a `review` creates a case in the compliance queue. Each decision is recorded.
+10. When a transaction is submitted, confirmed or fails, the chain watcher publishes an event. The Notification Service turns it into an alert for production support, and a failed transaction pages the on-call engineer.
 
 ## 7. AWS deployment automation (Phase 4 and later)
 
@@ -121,7 +140,7 @@ Environments: `sandbox` (automatic apply allowed), `staging` (approval required)
 
 Identity and access: OIDC sign-in; short-lived sessions; role claims mapped to the RBAC matrix in `PRD.md`. The API validates every token and checks scopes per endpoint.
 
-Network: public subnets only for the load balancer; application and data in private subnets; security groups allow only required ports; WAF rules for common attacks and rate limits; no public database endpoint.
+Network: the Token Gateway is the only service on the public side, behind WAF and the load balancer; the API service, workers and data are in private subnets with no public listeners; security groups allow only required ports; WAF rules for common attacks and rate limits; no public database endpoint.
 
 Data protection: TLS everywhere; KMS customer-managed keys for RDS, S3, Secrets Manager and CloudWatch logs; backups encrypted; key rotation enabled.
 
@@ -137,7 +156,7 @@ Threat model: maintain a threat model in `docs/THREAT_MODEL.md` covering spoofed
 
 ## 9. Observability and operations
 
-Structured JSON logs with request ID, user role (not identity where possible), route and latency. Metrics: request rate, error rate, p95 latency per route, queue depth, job failure rate, adapter error rate by vendor. Alerts on error rate above 2% for 5 minutes, queue depth above a threshold, and any audit write failure. Runbooks in `docs/runbooks/`.
+Structured JSON logs with request ID, user role (not identity where possible), route and latency. Metrics: request rate, error rate, p95 latency per route, queue depth, job failure rate, adapter error rate by vendor. Platform metrics: gateway requests by client platform and version, version rejections, screening decision counts and latency, notification delivery success and time to deliver, and the age of unacknowledged failure alerts. Alerts on error rate above 2% for 5 minutes, queue depth above a threshold, and any audit write failure. Alerts also fire when a failed-transaction notification is unacknowledged after 15 minutes, and when version rejections rise above a set rate. Runbooks in `docs/runbooks/`.
 
 ## 10. Environments and release
 
@@ -147,4 +166,50 @@ Release: trunk-based development with short-lived branches; CI on every pull req
 
 ## 11. Decisions to record
 
-Record each of these in `docs/DECISIONS.md` when made: frontend framework; API framework; ORM; hosting (ECS or EKS); custody provider shortlist; first public chain and first permissioned ledger; PDF generation library; catalogue ownership; retention period.
+Record each of these in `docs/DECISIONS.md` when made: frontend framework; API framework; ORM; hosting (ECS or EKS); custody provider shortlist; first public chain and first permissioned ledger; PDF generation library; catalogue ownership; retention period; Token Gateway implementation (AWS API Gateway or Fastify); event bus; chat and paging tools; screening provider; risk scoring approach (rules first, models later).
+
+## 12. Token Gateway
+
+Responsibilities: one route table that maps public paths to upstream services; OIDC token validation (signature, issuer, audience and expiry); scope checks per route; rate limits per user, per device and per client application (token bucket in Redis); the version gate, which reads `X-Client-Platform` and `X-Client-Version`; request ID creation and propagation; CORS for configured web origins; removal of internal error details from responses.
+
+Not responsibilities: business logic, data storage, compliance decisions, and any handling of keys or secrets beyond token validation.
+
+Route table: the table is kept as data in `packages/shared/routes.ts`. Each entry holds the path prefix, the upstream service, the required scopes, the rate limit class and whether mobile clients may call it. Section 14 of `API_AND_DATA.md` is the human-readable copy, and a contract test fails if the two differ.
+
+Mobile specifics: access tokens are short-lived and refresh tokens are stored in the platform's secure storage [VERIFY with the mobile team]; the app never holds blockchain signing keys, and ownership signatures are made in the user's wallet app [VERIFY the wallet connection method]; push tokens are registered through the gateway and removed on logout; certificate pinning is a mobile build decision [VERIFY].
+
+Deployment: WAF and an ALB in front of an ECS service. If the team chooses AWS API Gateway instead, it uses the same route table, and the token validation moves to a Lambda or ECS authoriser. Either way, the domain services stay on private subnets.
+
+## 13. Compliance and Risk Engine
+
+Shape: a module inside `apps/api`. Rule sets are versioned JSON data, loaded and evaluated in process. External data is read through the screening and KYC adapters. Decisions are written to `compliance_decisions` and review cases to `compliance_cases`.
+
+Interface: `evaluate(checkType, subject, context)` returns a decision with `outcome` (allow, review or block), `score` (0 to 100), `reasons` (each with a stable code and a display message), `ruleSetVersion` and `evaluatedAt`.
+
+Check types: `configuration.save`, `wallet.register`, `quote.execute`, `deployment.start`, `transaction.submit`.
+
+Risk factors in v1 are rules only: amount above a threshold relative to history, new counterparty, velocity over a window, chain risk tier, congestion, and provider incident flag. Weights and thresholds sit in a configurable table, not in code. Model-based scoring is out of scope for v1 [VERIFY whether compliance wants it later].
+
+Fail-closed policy: when a mandatory source (screening or KYC status) is unavailable, value movement receives review, and new wallet registration receives block [VERIFY with compliance].
+
+Overrides: none for block. A review release requires a compliance role and a written reason. Releases above a configured amount need a second approver [VERIFY].
+
+Audit: every decision is recorded with an input hash and the rule set version. Raw customer data is not copied into the decision record.
+
+## 14. Notification Service
+
+Event sources: `chain_tx.submitted`, `chain_tx.confirmed`, `chain_tx.failed`, `compliance.decision_recorded` (for review and block decisions), `conversion.state_changed` (for failed states), `deployment.state_changed` (for failed states) and `notification.delivery_failed`.
+
+Chain transaction watcher: a worker that tracks each submitted transaction through the chain adapter's `getTxStatus`. It counts confirmations against a depth set per chain [VERIFY per network] and publishes `chain_tx.confirmed` or `chain_tx.failed` once the state is final. Each state change is written to `blockchain_transactions` through the outbox, so an event is never published without its row.
+
+Pipeline: event bus, then the notification consumer, then route matching (event type, minimum severity, chain, environment), then the dedupe check (key: event ID plus transaction hash), then template rendering (no sensitive fields), then channel adapters, then the delivery record, then the escalation timer.
+
+Severity: `info` for initiated and succeeded; `high` for a block decision or a failed non-production transaction; `critical` for a failed transaction on a production chain, or three failures within 10 minutes.
+
+Threading: all notifications for one transaction share a thread key (the transaction row ID), so chat messages group together.
+
+Templates: plain text plus structured fields. Shortened hashes only. Times in UTC, with local conversion in the console.
+
+Escalation: an unacknowledged critical notification moves to the next on-call tier after 15 minutes; an unacknowledged high notification moves to the support lead after 60 minutes [VERIFY both with support].
+
+Local development: the mock channel writes to the console log and to a local mail catcher. Demo mode routes only to the sandbox channel.
