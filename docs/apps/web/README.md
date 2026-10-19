@@ -1,6 +1,6 @@
 # Modular web app
 
-This Vite + React 18 + TypeScript app is the modular successor to the root-level HTML demo. The original prototype remains available as a comparison/reference.
+This Vite + React 18 + TypeScript app is the modular web application. The former standalone suite HTML prototype has been removed; the layered architecture HTML remains as a reference asset.
 
 ## Run
 

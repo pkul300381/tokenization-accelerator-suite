@@ -5,7 +5,7 @@ import { routes } from "../src/routes.mjs";
 import { checkClientVersion, checkRouteAccess, requiresIdempotencyKey, resolveRoute } from "../src/policy.mjs";
 
 test("route families match the API contract's public gateway route list", async () => {
-  const api = await readFile(new URL("../../API_AND_DATA.md", import.meta.url), "utf8");
+  const api = await readFile(new URL("../../docs/API_AND_DATA.md", import.meta.url), "utf8");
   const table = api.split("## 14. Token Gateway")[1].split("\n## ")[0];
   const documented = [...table.matchAll(/^\| `(\/v1\/[a-z-]+)` \|/gm)].map((match) => match[1]).filter((path) => path !== "/v1/gateway").sort();
   assert.deepEqual(routes.map(({ prefix }) => prefix).sort(), documented);
