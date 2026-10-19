@@ -1,0 +1,5 @@
+packages:
+  - apps/*
+  - token-gateway
+allowBuilds:
+  esbuild: true

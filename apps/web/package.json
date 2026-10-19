@@ -1,0 +1,29 @@
+{
+  "name": "@opus/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "sync:assets": "node scripts/sync-reference-assets.mjs",
+    "predev": "pnpm sync:assets",
+    "dev": "vite",
+    "prebuild": "pnpm sync:assets",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "~5.9.0",
+    "vite": "^7.1.0"
+  }
+}

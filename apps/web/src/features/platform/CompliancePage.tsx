@@ -1,0 +1,12 @@
+import { MetricCard } from '../../components/MetricCard';
+import { PageTitle } from '../../components/PageTitle';
+
+const decisions = [
+  { id: 'CASE-2041', subject: 'Quote qte_9a1', outcome: 'Review', score: 72, reason: 'AMOUNT_ABOVE_TYPICAL', message: 'Amount is above the 90-day median for this wallet.' },
+  { id: 'CASE-2038', subject: 'Configuration cfg_17', outcome: 'Block', score: 96, reason: 'ASSET_NOT_ELIGIBLE', message: 'Stablecoin is not eligible in the current catalogue.' },
+  { id: 'CASE-2032', subject: 'Wallet wal_08', outcome: 'Allow', score: 12, reason: 'WITHIN_POLICY', message: 'All configured checks passed.' },
+];
+
+export function CompliancePage() {
+  return <div className="page"><PageTitle eyebrow="Platform service · Simulated decisions" title="Compliance & Risk Engine" description="Inspect illustrative rule-based decisions and stable reason codes. Production decisions must be made by the server before a write commits." /><div className="callout">The demo does not screen a real person, wallet, asset, or transaction.</div><div className="grid grid--metrics"><MetricCard label="Rule set" value="rs-2026.10.1" /><MetricCard label="Open review cases" value="1" /><MetricCard label="Outcomes" value="Allow · Review · Block" /><MetricCard label="Mode" value="Mock data" /></div><section className="panel"><h2>Recent decisions</h2><div className="table-wrap"><table><thead><tr><th>Case</th><th>Subject</th><th>Outcome</th><th>Score</th><th>Reason code</th><th>Explanation</th><th>Action</th></tr></thead><tbody>{decisions.map((decision) => <tr key={decision.id}><td className="mono">{decision.id}</td><td>{decision.subject}</td><td><span className={`badge ${decision.outcome === 'Allow' ? 'badge--good' : decision.outcome === 'Review' ? 'badge--warn' : 'badge--bad'}`}>{decision.outcome}</span></td><td>{decision.score}/100</td><td className="mono">{decision.reason}</td><td>{decision.message}</td><td>{decision.outcome === 'Review' ? <button className="button button--outline button--small" disabled title="Review actions require an authenticated compliance role and audited reason">Release / reject in console</button> : decision.outcome === 'Block' ? <span className="muted">Block cannot be overridden</span> : '—'}</td></tr>)}</tbody></table></div><p className="muted">Production rule versioning, input hashes, case actions and audit records are enforced by the API.</p></section></div>;
+}

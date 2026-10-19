@@ -1,0 +1,8 @@
+import { useState } from 'react';
+import { demoNotifications } from '../demo/demoData';
+import { PageTitle } from '../../components/PageTitle';
+
+export function NotificationsPage() {
+  const [acknowledged, setAcknowledged] = useState<string[]>([]);
+  return <div className="page"><PageTitle eyebrow="Platform service · Sandbox routing" title="Notification Service" description="Review sample transaction and compliance alerts. Production messages should omit full wallet addresses, customer identifiers, and secrets." /><div className="toolbar"><span className="badge badge--accent">Demo channel only</span><span className="badge">Email digest · Chat · Paging · Push</span><span className="badge">Acknowledgement stops escalation</span></div><section className="panel"><div className="section-heading"><h2>Recent notifications</h2><span className="muted">{demoNotifications.length} sample alerts</span></div><div className="grid">{demoNotifications.map((item) => { const done = acknowledged.includes(item.id); const tone = item.severity === 'Critical' ? 'badge--bad' : item.severity === 'High' ? 'badge--warn' : 'badge--accent'; return <article className="card" key={item.id}><span className={`badge ${tone}`}>{item.severity} · {item.type}</span><h3>{item.title}</h3><p>{item.body}</p><span className="muted">{item.time}</span><button className="button button--outline button--small card__footer" type="button" onClick={() => setAcknowledged((current) => done ? current : [...current, item.id])} disabled={done}>{done ? 'Acknowledged in demo' : 'Acknowledge'}</button></article>; })}</div><p className="muted">Delivery retries, on-call escalation and channel changes are not connected in this prototype.</p></section></div>;
+}

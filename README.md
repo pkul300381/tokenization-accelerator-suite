@@ -16,6 +16,7 @@ This folder turns the simulated web prototype into a full-scale application brie
 | `PROMPT_LIBRARY.md` | Copy-paste prompts for each phase, for Claude or ChatGPT | Engineers driving the assistant |
 | `TOKEN_GATEWAY.md` | Token Gateway capabilities, acceptance criteria, APISIX recommendation and delivery plan | Gateway engineers and architects |
 | `token-gateway/` | Initial APISIX-backed gateway configuration project and unit tests | Gateway engineers |
+| `apps/web/` | Modular React + TypeScript + Vite version of the suite prototype | Frontend engineers |
 
 ## Choosing the assistant
 
@@ -25,6 +26,10 @@ The pack does not depend on a specific model. Use whichever assistant your team 
 ## Recommended way to work
 
 Build in the order set out in `BUILD_PLAN.md`. Do not ask the assistant to generate the whole application in one pass. Each task has a single goal, a list of files to touch, tests to run, and an exit check. Keep one task per session where possible, and commit after each task passes.
+
+## Run the modular web app
+
+Install the workspace dependencies with `pnpm install`, then run `pnpm dev:web`. Build it with `pnpm build:web`; check TypeScript with `pnpm typecheck:web`. The app is in `apps/web/src`, organized by app shell, shared components, and product features. The existing root-level HTML prototype remains the visual and interaction reference. Its logo and architecture document are synchronized into the Vite public directory before development and builds.
 
 ## Assumptions in this pack
 
