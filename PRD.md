@@ -1,6 +1,6 @@
 # Product Requirements: Opus Tokenization Accelerator Suite
 
-Version 1.0 · 2026-10-16 · Owner: TAC service line · Status: Draft for review
+Version 1.1 · 2026-10-17 · Owner: TAC service line · Status: Draft for review
 
 ## 1. Purpose
 
@@ -22,13 +22,15 @@ Authorisation matrix: architects can create and edit blueprints; operations can 
 
 ## 3. Scope
 
-In scope for v1: the suite shell and navigation; the eight services in section 5 (S1 to S8); a demo mode with seeded data; authentication and roles; audit logging; reporting; a deployable blueprint JSON export; sandbox adapters for custody, chain, FX and gas.
+The suite now contains nine service offerings. The original eight (S1 to S8) remain the v1 baseline. ChainSync Integration Layer (S9) is an approved suite extension with staged delivery; its component model is defined here, while each production integration requires adapter, security, legal and network validation before release.
+
+In scope for the v1 baseline: the suite shell and navigation; S1 to S8; a demo mode with seeded data; authentication and roles; audit logging; reporting; a deployable blueprint JSON export; sandbox adapters for custody, chain, FX and gas. S9 is not assumed to be production-ready as part of the v1 baseline.
 
 Out of scope for v1: live fund movement; native mobile app builds (the gateway and notification contracts that mobile apps use are in scope); production custody integration; KYC document storage; trading; retail user onboarding; automatic AWS deployment to production (sandbox only until Phase 5 sign-off).
 
 ## 4. Suite shell
 
-The landing page shows the suite title "Opus Tokenization Accelerator Suite", the five business services as selectable cards, and the three platform services (Compliance & Risk Engine, Notification Service, Token Gateway) in a separate row labelled Platform. Each card shows its purpose in one sentence, its status (Live, Beta, or Planned) and a primary action. The header has navigation to each service, a theme toggle (system, light, dark), and a visible "Simulated data" label whenever seeded data is shown. The footer shows the build version and environment name.
+The landing page shows the suite title "Opus Tokenization Accelerator Suite", the six business services (S1 to S5 plus the staged S9 ChainSync extension) as selectable cards, and the three platform services (Compliance & Risk Engine, Notification Service, Token Gateway) in a separate row labelled Platform. Each card shows its purpose in one sentence, its delivery status (Live, Beta, Planned, or Extension planned) and a primary action. The header has navigation to each service, a theme toggle (system, light, dark), and a visible "Simulated data" label whenever seeded data is shown. The footer shows the build version and environment name.
 
 ## 5. Services and acceptance criteria
 
@@ -145,6 +147,27 @@ Acceptance criteria:
 - AC-S8-7: mobile devices register and revoke push tokens through the gateway. Tokens are removed on logout.
 - AC-S8-8: the gateway does not log request or response bodies. It logs the route, status, latency and request ID only.
 - AC-S8-9: CORS allows only the configured web origins.
+
+### S9. ChainSync Integration Layer (suite extension)
+
+Purpose: connect traditional financial systems and off-chain corporate-action workflows to on-chain execution and reconciliation. S9 extends the existing five business services; it composes with the Wallet Adapter, Fiat Conversion Bridge, Gas Fee Calculator, Audit and Reporting, Compliance & Risk Engine, Notification Service, and Token Gateway rather than replacing them.
+
+Target component set: ISO 20022 Event Listener; Coupon Payment Automator; Oracle Connector; Multi-Chain Router; Stablecoin Delivery Rail; Ledger Scan; Reconciliation Engine; Compliance & Reporting; Smart Contract Library. The architecture includes event ingestion (ISO 20022, SWIFT, FIX, custodian APIs and webhooks), corporate-action orchestration and exception management, reference-rate/FX/NAV oracle feeds, a control plane, smart-contract adapter, and routing to connected ledgers.
+
+Acceptance criteria:
+- AC-S9-1: Inbound messages from approved financial sources are authenticated, schema-validated, normalized to a versioned event format, deduplicated by source event ID, and stored with source and receipt timestamps. External callbacks use private, authenticated adapters; browser/mobile clients cannot submit partner events as trusted data.
+- AC-S9-2: The orchestration engine supports versioned corporate-action rules and an explicit state machine. Invalid transitions are rejected, exceptions are visible, and every transition is auditable.
+- AC-S9-3: Coupon automation supports scheduled fixed-rate and SOFR-linked floating-rate examples. Calculations retain the source inputs, rule version, rounding result, and eligible-holder snapshot used to derive entitlements.
+- AC-S9-4: Oracle observations for approved reference-rate, FX and NAV feeds include provider, value, observed time, received time and freshness status. Stale, missing or out-of-range observations block or place an action into review according to configured policy; feed providers and Chainlink availability are [VERIFY].
+- AC-S9-5: The multi-chain router exposes only adapters enabled for the tenant and environment. Ethereum, Solana, Avalanche, Hyperledger Fabric, R3 Corda, Kinexys, GS DAP and Canton are candidate targets from the offering design; support, interoperability and deployment availability are [VERIFY] per network and client.
+- AC-S9-6: The smart-contract library versions each template and records its review/audit provenance. Templates cover coupon, redemption, voting, stock split, tender offer and waterfall distribution. Do not label a template "pre-audited" unless evidence and scope of the audit are recorded.
+- AC-S9-7: A settlement run must pass simulation, policy checks and configured multi-signature/custody authorization before submission. Application code never receives private keys. Gas optimization is bounded; retries are allowed only when the chain adapter and idempotency policy make the submission safe.
+- AC-S9-8: Ledger Scan captures ownership at the configured record date and calculates per-holder entitlements from a reproducible snapshot. Stablecoin delivery uses the existing FX and Wallet services and does not bypass their compliance, limits or approval checks.
+- AC-S9-9: Reconciliation compares recorded off-chain positions and on-chain results, identifies breaks with explainable differences, and proposes repair actions. No repair may move funds or alter a ledger without the normal authorization and approval path.
+- AC-S9-10: Compliance and reporting links to the existing KYC reference registry, AML screening and audit services. Travel Rule and 1099/FATCA outputs are jurisdiction-dependent capabilities and remain [VERIFY] with compliance/legal; S9 stores references and required reporting metadata, not KYC documents.
+- AC-S9-11: Every ingested event, oracle observation, simulation, approval, settlement transition, reconciliation result and repair decision has a request/correlation ID and an append-only audit record. Logs exclude secrets, full wallet addresses and sensitive event payloads.
+
+Delivery boundary: S9 starts in mock/demo mode. Network adapters, oracle sources, financial-message connectivity, legal reporting obligations, transaction authority and operating roles must be validated with the client before a sandbox or production integration is enabled.
 
 ## 6. Roles and permissions summary
 

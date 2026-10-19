@@ -1,6 +1,6 @@
 # Build Plan: Opus Tokenization Accelerator Suite
 
-Version 1.0 · 2026-10-16 · Each task has an ID, a goal, files to touch, tests to run and an exit check. Use `skill.md` for every task. Do not start a phase until the previous phase's exit gate is passed.
+Version 1.1 · 2026-10-17 · Each task has an ID, a goal, files to touch, tests to run and an exit check. Use `skill.md` for every task. Do not start a phase until the previous phase's exit gate is passed.
 
 Indicative effort assumes one senior engineer plus one engineer, working with an AI assistant. Adjust to team size. Durations are estimates, not commitments.
 
@@ -35,7 +35,7 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 
 ## Phase 2: Core services in sandbox (week 5 to 10)
 
-**Goal:** all five services work end to end against sandbox adapters.
+**Goal:** the five original business services work end to end against sandbox adapters. ChainSync (S9) is planned as a staged extension after the S1–S8 baseline gate.
 
 ### S1 Stablecoin Selector
 
@@ -100,6 +100,23 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 
 **Gate 2:** all eight services (S1 to S8) pass unit, API and end-to-end tests in sandbox; the cross-cutting audit test passes; accessibility checks pass on every page; a walkthrough of the golden path by an Opus architect is recorded.
 
+### ChainSync Integration Layer (S9) extension
+
+Schedule this work after the S1–S8 sandbox gate and estimate it after adapter/network discovery. S9 is part of the overall service suite, but is not a hidden expansion of the original v1 delivery commitment.
+
+- **CS9-01 Domain contracts and event intake.** Define versioned normalized financial-event schemas and private adapter interfaces for ISO 20022, SWIFT, FIX, custodian APIs and authenticated webhooks. Tests: schema validation, duplicate delivery, signature/authentication failure, replay and source provenance.
+- **CS9-02 Corporate-action orchestration.** Implement versioned action rules, state transitions, exception handling and scheduled triggers. Tests: fixed and SOFR-linked coupon examples, invalid transitions, deterministic replay and idempotent scheduling.
+- **CS9-03 Oracle connector.** Add mock-first reference-rate, FX and NAV feeds with timestamps, provenance and freshness policies. Tests: stale/missing/out-of-range feed handling and source failover; verify selected provider capabilities before enabling.
+- **CS9-04 Ledger scan and entitlement calculation.** Snapshot ownership at a record date and calculate per-holder entitlements. Tests: snapshot repeatability, decimal/rounding boundaries and changes after the record date do not rewrite prior results.
+- **CS9-05 Smart-contract template library and adapter.** Version coupon, redemption, voting, stock split, tender offer and waterfall templates; record audit provenance. Implement simulation, gas checks, multi-signature/custody authorization and safe retry policy. Tests: template schema/version, simulation-before-approval, missing approvals block execution, no private keys enter app code, duplicate execution is idempotent.
+- **CS9-06 Multi-chain routing and stablecoin delivery.** Add per-tenant adapter capability registry for the candidate networks in `PRD.md`; compose delivery with existing FX, Wallet and Compliance services. Tests: unsupported route rejected, failed adapter isolated, policy checks cannot be bypassed. Network names in the deck are candidates pending verification.
+- **CS9-07 Reconciliation and repair proposals.** Compare off-chain positions with chain results, generate explainable breaks and propose repairs. Tests: matched/mismatched positions, reproducible results and repair blocked without explicit approval; no autonomous fund movement.
+- **CS9-08 Compliance, reporting and audit integration.** Integrate KYC references, AML screening, audit events and approved tax/regulatory exports. Tests: no KYC documents in S9 storage, report lineage, role checks, and legal/compliance-approved jurisdiction rules. Travel Rule and 1099/FATCA requirements remain [VERIFY].
+- **CS9-09 UI and service integration.** Add ChainSync action, template, simulation, approval and reconciliation views, with accessible empty/error states. Tests: user walkthrough against mock adapters and authorization matrix.
+- **CS9-10 Staging validation.** Validate selected financial-message sources, oracle providers, networks, privacy boundaries, key-management path, contract audit evidence, load and recovery behavior before enabling any sandbox/live integration.
+
+**ChainSync gate:** every component is mock-tested; selected external adapters pass contract/security review; execution requires simulation and configured approval; reconciliation is traceable; compliance/legal owners approve the reporting scope. Production enablement remains a separate release decision.
+
 ## Phase 3: Hardening and pilot (week 11 to 14)
 
 - **F3-01 Security review.** Threat model in `docs/THREAT_MODEL.md`; fix findings; dependency and container scanning clean of critical findings.
@@ -141,4 +158,4 @@ Indicative effort assumes one senior engineer plus one engineer, working with an
 
 ## Definition of done for the programme
 
-The suite is in production with live adapters enabled for at least one custody provider and one public chain, the eight services are live, notifications fire for live transactions, an audit export has been reviewed by compliance, and the deployment automation has run successfully in the production account with two approvals and a change ticket.
+The original eight services are in production with approved live adapters, notifications fire for live transactions, an audit export has been reviewed by compliance, and deployment automation has run successfully with two approvals and a change ticket. ChainSync is considered production-ready only after its separate extension gate and release approval pass.

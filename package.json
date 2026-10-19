@@ -1,0 +1,10 @@
+{
+  "name": "opus-tokenization-accelerator-suite",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @opus/web dev",
+    "build:web": "pnpm --filter @opus/web build",
+    "typecheck:web": "pnpm --filter @opus/web typecheck"
+  }
+}

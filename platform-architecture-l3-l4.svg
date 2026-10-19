@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1250" viewBox="0 0 1800 1250" role="img" aria-labelledby="title desc">
+<title id="title">Tokenization Accelerator Suite — cloud-agnostic L3/L4 architecture</title>
+<desc id="desc">Layered platform architecture showing clients and ingress, domain and platform services, data and event infrastructure, adapters, observability, security, and open-source CI/CD and GitOps delivery.</desc>
+<defs>
+  <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#0b1220"/><stop offset="1" stop-color="#101b2e"/></linearGradient>
+  <linearGradient id="core" x2="1" y2="1"><stop stop-color="#132944"/><stop offset="1" stop-color="#122035"/></linearGradient>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#020617" flood-opacity=".42"/></filter>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#8ca8c9"/></marker>
+  <marker id="arrowCyan" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#38bdf8"/></marker>
+  <style>
+    text{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#e7eef8} .title{font-size:28px;font-weight:700;letter-spacing:.2px}.sub{font-size:13px;fill:#9fb2ca}.zoneTitle{font-size:14px;font-weight:700;letter-spacing:1.4px;fill:#d7e4f3}.label{font-size:13px;font-weight:650}.small{font-size:11px;fill:#a9bbd0}.tiny{font-size:10px;fill:#93a9c1}.tag{font-size:10px;font-weight:700;letter-spacing:.6px}.box{filter:url(#shadow)}.node{fill:#17263a;stroke:#344860;stroke-width:1.2}.mutedNode{fill:#122033;stroke:#2c4158;stroke-width:1.1}.flow{fill:none;stroke:#8ca8c9;stroke-width:2;marker-end:url(#arrow)}.event{fill:none;stroke:#38bdf8;stroke-width:2;stroke-dasharray:7 5;marker-end:url(#arrowCyan)}.telemetry{fill:none;stroke:#a78bfa;stroke-width:1.7;stroke-dasharray:3 5}.divider{stroke:#31465d;stroke-width:1}
+  </style>
+</defs>
+<rect width="1800" height="1250" fill="url(#bg)"/>
+<text x="42" y="48" class="title">OPUS TOKENIZATION ACCELERATOR SUITE</text>
+<text x="43" y="73" class="sub">Cloud-agnostic · Open-source first · L3 logical services + L4 runtime, data, security and delivery details</text>
+<g transform="translate(1415 34)"><rect width="342" height="46" rx="12" fill="#14243a" stroke="#344860"/><circle cx="20" cy="23" r="5" fill="#34d399"/><text x="35" y="20" class="tag" fill="#b8c9dc">ARCHITECTURE BASELINE</text><text x="35" y="36" class="tiny">Modular domain core · evolve boundaries with evidence</text></g>
+
+<!-- Main runtime -->
+<rect x="32" y="101" width="1736" height="661" rx="18" fill="#0d1727" stroke="#34465d" stroke-width="1.4"/>
+<text x="54" y="131" class="zoneTitle">RUNTIME PLATFORM  /  PRIVATE CLUSTER OR VM-BASED DEPLOYMENT</text>
+<text x="54" y="151" class="tiny">One logical platform; deployable as containers on Kubernetes or equivalent schedulers. Namespace / network policy separates edge, app, data and operations.</text>
+
+<!-- clients -->
+<g class="box"><rect x="54" y="180" width="215" height="142" rx="13" class="node"/><rect x="54" y="180" width="5" height="142" rx="3" fill="#60a5fa"/><text x="73" y="207" class="label">Consumers</text>
+<text x="73" y="232" class="small">React Web Console</text><text x="73" y="252" class="small">Future iOS / Android</text><text x="73" y="272" class="small">Institutional / partner API</text><text x="73" y="299" class="tiny">OIDC · HTTPS · OpenAPI SDKs</text></g>
+<g class="box"><rect x="311" y="180" width="222" height="142" rx="13" class="node"/><rect x="311" y="180" width="5" height="142" rx="3" fill="#f59e0b"/><text x="330" y="207" class="label">Edge &amp; API Gateway</text><text x="330" y="232" class="small">HAProxy / Envoy ingress</text><text x="330" y="252" class="small">Apache APISIX data plane</text><text x="330" y="272" class="small">OIDC · scopes · quotas · WAF*</text><text x="330" y="299" class="tiny">Route config generated from contract</text></g>
+<path d="M269 251H308" class="flow"/>
+
+<!-- identity -->
+<g class="box"><rect x="54" y="350" width="215" height="111" rx="13" class="mutedNode"/><text x="73" y="377" class="label">Identity &amp; access</text><text x="73" y="400" class="small">Keycloak (OIDC / OAuth2)</text><text x="73" y="420" class="small">RBAC + tenant / resource policy</text><text x="73" y="443" class="tiny">Short-lived tokens · step-up actions</text></g>
+<path d="M161 350V324" class="flow"/>
+
+<!-- API core -->
+<g class="box"><rect x="579" y="174" width="713" height="339" rx="16" fill="url(#core)" stroke="#4172a0" stroke-width="1.5"/><rect x="579" y="174" width="713" height="43" rx="16" fill="#183451"/><path d="M579 201h713" stroke="#183451"/><text x="600" y="201" class="label">API / DOMAIN CORE  ·  modular monolith first</text><text x="1158" y="201" class="tag" fill="#93c5fd">FASTIFY · TYPESCRIPT</text>
+<rect x="600" y="233" width="212" height="102" rx="10" fill="#17283d" stroke="#405872"/><text x="615" y="256" class="label">Programme design</text><text x="615" y="279" class="small">S1 Selector · blueprint versions</text><text x="615" y="299" class="small">Catalogue · configuration control</text><text x="615" y="319" class="tiny">Validated, reproducible configuration</text>
+<rect x="828" y="233" width="212" height="102" rx="10" fill="#17283d" stroke="#405872"/><text x="843" y="256" class="label">Transaction services</text><text x="843" y="279" class="small">S2 Wallets · S3 FX bridge</text><text x="843" y="299" class="small">S4 Gas estimates · quote lifecycle</text><text x="843" y="319" class="tiny">Idempotent commands · state machines</text>
+<rect x="1056" y="233" width="215" height="102" rx="10" fill="#17283d" stroke="#405872"/><text x="1071" y="256" class="label">Operations &amp; extension</text><text x="1071" y="279" class="small">S9 ChainSync orchestration</text><text x="1071" y="299" class="small">Reconcile · reports · deployment jobs</text><text x="1071" y="319" class="tiny">Mock-first; adapters enabled by policy</text>
+<rect x="600" y="353" width="212" height="105" rx="10" fill="#1c283a" stroke="#b45309"/><text x="615" y="376" class="label">Compliance &amp; Risk</text><text x="615" y="399" class="small">Rules · screening references</text><text x="615" y="419" class="small">Allow / review / block · case queue</text><text x="615" y="441" class="tiny">Versioned policy + decision evidence</text>
+<rect x="828" y="353" width="212" height="105" rx="10" fill="#1c283a" stroke="#b45309"/><text x="843" y="376" class="label">Audit &amp; Reporting</text><text x="843" y="399" class="small">Append-only activity trail</text><text x="843" y="419" class="small">Exports · evidence · retention rules</text><text x="843" y="441" class="tiny">Actor · request · config/policy version</text>
+<rect x="1056" y="353" width="215" height="105" rx="10" fill="#1c283a" stroke="#b45309"/><text x="1071" y="376" class="label">Notifications</text><text x="1071" y="399" class="small">Templates · routing · escalation</text><text x="1071" y="419" class="small">Deduplication · delivery status</text><text x="1071" y="441" class="tiny">Consumes durable domain events</text>
+<text x="600" y="489" class="tiny">Cross-cutting: schema validation · tenant context · policy enforcement · idempotency · request/correlation IDs · domain error model</text></g>
+<path d="M533 251H575" class="flow"/>
+
+<!-- data platform -->
+<g class="box"><rect x="1334" y="174" width="406" height="339" rx="15" class="node"/><rect x="1334" y="174" width="5" height="339" rx="3" fill="#c084fc"/><text x="1354" y="201" class="label">State &amp; asynchronous work</text>
+<rect x="1354" y="222" width="165" height="101" rx="10" fill="#192a3e" stroke="#455b73"/><text x="1368" y="246" class="label">PostgreSQL</text><text x="1368" y="267" class="small">Tenant data · migrations</text><text x="1368" y="287" class="small">Outbox · idempotency</text><text x="1368" y="307" class="tiny">Backups · PITR · encryption</text>
+<rect x="1534" y="222" width="185" height="101" rx="10" fill="#192a3e" stroke="#455b73"/><text x="1548" y="246" class="label">Event backbone</text><text x="1548" y="267" class="small">NATS JetStream (default)</text><text x="1548" y="287" class="small">Kafka when scale / replay needs</text><text x="1548" y="307" class="tiny">Schema registry · DLQ · replay</text>
+<rect x="1354" y="341" width="165" height="82" rx="10" fill="#192a3e" stroke="#455b73"/><text x="1368" y="365" class="label">Valkey</text><text x="1368" y="386" class="small">Cache · locks · limits</text><text x="1368" y="407" class="tiny">No source-of-truth state</text>
+<rect x="1534" y="341" width="185" height="82" rx="10" fill="#192a3e" stroke="#455b73"/><text x="1548" y="365" class="label">Workers</text><text x="1548" y="386" class="small">Watchers · exports · reconcile</text><text x="1548" y="407" class="tiny">Retry policy · bounded concurrency</text>
+<text x="1354" y="455" class="small">S3-compatible object storage (MinIO*)</text><text x="1354" y="476" class="tiny">Report artifacts · immutable evidence · lifecycle policy</text></g>
+<path d="M1295 286H1330" class="flow"/><path d="M1295 413H1330" class="event"/>
+
+<!-- adapter ecosystem -->
+<g class="box"><rect x="579" y="542" width="1161" height="184" rx="15" fill="#101e2f" stroke="#3e536b"/><text x="600" y="571" class="label">ADAPTER BOUNDARY  ·  contracts in /packages/adapters  ·  vendor errors normalized  ·  mock + sandbox + live implementations</text>
+<rect x="600" y="591" width="180" height="93" rx="10" class="mutedNode"/><text x="614" y="615" class="label">Custody &amp; signing</text><text x="614" y="638" class="small">MPC / custody API</text><text x="614" y="661" class="tiny">Keys remain external</text>
+<rect x="796" y="591" width="180" height="93" rx="10" class="mutedNode"/><text x="810" y="615" class="label">Chain &amp; ledger</text><text x="810" y="638" class="small">RPC · indexer · node</text><text x="810" y="661" class="tiny">Per-tenant allowlist</text>
+<rect x="992" y="591" width="180" height="93" rx="10" class="mutedNode"/><text x="1006" y="615" class="label">Financial data</text><text x="1006" y="638" class="small">FX · gas · oracle</text><text x="1006" y="661" class="tiny">Timestamp · freshness</text>
+<rect x="1188" y="591" width="180" height="93" rx="10" class="mutedNode"/><text x="1202" y="615" class="label">Compliance data</text><text x="1202" y="638" class="small">KYC refs · screening</text><text x="1202" y="661" class="tiny">Evidence + source version</text>
+<rect x="1384" y="591" width="335" height="93" rx="10" class="mutedNode"/><text x="1398" y="615" class="label">Delivery &amp; infrastructure</text><text x="1398" y="638" class="small">SMTP · chat · paging · push · cloud API</text><text x="1398" y="661" class="tiny">Secrets via Vault · short-lived workload identity</text></g>
+<path d="M935 514V538" class="event"/><path d="M1138 514V538" class="flow"/>
+
+<!-- side boxes external and controls -->
+<g class="box"><rect x="54" y="497" width="479" height="229" rx="15" fill="#101e2f" stroke="#38516b"/><text x="75" y="526" class="label">Trust zones &amp; platform safeguards</text>
+<text x="75" y="554" class="small">• TLS / mTLS between trust boundaries</text><text x="75" y="578" class="small">• Network policies; default-deny east/west</text><text x="75" y="602" class="small">• OpenBao / Vault secrets; rotation &amp; audit</text><text x="75" y="626" class="small">• Cosign signatures · SBOM · Trivy scanning</text><text x="75" y="650" class="small">• OPA / Kyverno policy guardrails</text><text x="75" y="674" class="small">• Rate limits · quotas · payload redaction</text><text x="75" y="704" class="tiny">* WAF is deployment-specific; use an OSS edge control where available.</text></g>
+
+<!-- lower ops + delivery -->
+<rect x="32" y="786" width="1736" height="421" rx="18" fill="#0d1727" stroke="#34465d" stroke-width="1.4"/>
+<text x="54" y="817" class="zoneTitle">PLATFORM ENGINEERING  /  DELIVERY, OPERATIONS &amp; GOVERNANCE</text>
+<line x1="883" y1="839" x2="883" y2="1184" class="divider"/>
+<text x="57" y="851" class="label" fill="#93c5fd">CI/CD + GITOPS SOFTWARE SUPPLY CHAIN</text>
+<text x="910" y="851" class="label" fill="#c4b5fd">OBSERVABILITY + OPERATIONS</text>
+
+<!-- CICD flow -->
+<g class="box"><rect x="56" y="875" width="169" height="105" rx="12" class="node"/><text x="72" y="902" class="label">Source control</text><text x="72" y="925" class="small">Forgejo / GitLab CE</text><text x="72" y="946" class="small">PR · CODEOWNERS</text><text x="72" y="966" class="tiny">Contracts + ADRs</text>
+<rect x="249" y="875" width="169" height="105" rx="12" class="node"/><text x="265" y="902" class="label">CI automation</text><text x="265" y="925" class="small">Tekton / Woodpecker</text><text x="265" y="946" class="small">Test · scan · build</text><text x="265" y="966" class="tiny">SLSA provenance</text>
+<rect x="442" y="875" width="169" height="105" rx="12" class="node"/><text x="458" y="902" class="label">Artifact supply chain</text><text x="458" y="925" class="small">BuildKit · Harbor</text><text x="458" y="946" class="small">Trivy · Syft · Cosign</text><text x="458" y="966" class="tiny">Immutable, signed images</text>
+<rect x="635" y="875" width="215" height="105" rx="12" class="node"/><text x="651" y="902" class="label">Promotion &amp; GitOps</text><text x="651" y="925" class="small">Helm / Kustomize</text><text x="651" y="946" class="small">Argo CD (or Flux)</text><text x="651" y="966" class="tiny">Dev → stage → prod; approval gates</text></g>
+<path d="M225 927H246" class="flow"/><path d="M418 927H439" class="flow"/><path d="M611 927H632" class="flow"/>
+<rect x="56" y="1002" width="794" height="82" rx="11" fill="#13243a" stroke="#314a65"/><text x="74" y="1028" class="label">Infrastructure as code &amp; environment lifecycle</text><text x="74" y="1051" class="small">OpenTofu · Ansible · Helm charts · dev/stage/prod parity · isolated tenant secrets · backup/restore drills</text><text x="74" y="1071" class="tiny">Plan review → policy checks → approval → progressive rollout → health verification → rollback</text>
+<rect x="56" y="1101" width="794" height="68" rx="11" fill="#13243a" stroke="#314a65"/><text x="74" y="1127" class="label">Developer platform &amp; governance</text><text x="74" y="1150" class="small">Backstage catalog · service templates · API/event schemas · ADRs · threat models · ownership &amp; SLOs</text>
+
+<!-- Observability -->
+<g class="box"><rect x="910" y="875" width="826" height="110" rx="12" fill="#171d35" stroke="#574788"/><text x="930" y="902" class="label">OpenTelemetry collection &amp; signals</text><text x="930" y="926" class="small">OTel SDKs / Collector · W3C Trace Context · RED/USE metrics · structured logs · audit events separated from diagnostics</text><text x="930" y="951" class="tiny">Request ID + tenant-safe correlation · no tokens, raw payloads, secrets, or full wallet addresses in telemetry</text><text x="930" y="972" class="tiny">Trace: client → APISIX → API → DB/outbox → broker → worker → adapter</text>
+<rect x="910" y="1005" width="251" height="128" rx="12" class="node"/><text x="928" y="1032" class="label">Metrics &amp; alerting</text><text x="928" y="1057" class="small">Prometheus · Alertmanager</text><text x="928" y="1080" class="small">SLO burn · queue age · adapter health</text><text x="928" y="1104" class="tiny">Paging routes · dedupe · runbooks</text>
+<rect x="1177" y="1005" width="251" height="128" rx="12" class="node"/><text x="1195" y="1032" class="label">Logs &amp; traces</text><text x="1195" y="1057" class="small">Loki · Tempo</text><text x="1195" y="1080" class="small">Grafana Explore / dashboards</text><text x="1195" y="1104" class="tiny">Retention · access control · redaction</text>
+<rect x="1444" y="1005" width="292" height="128" rx="12" class="node"/><text x="1462" y="1032" class="label">Operator workflows</text><text x="1462" y="1057" class="small">Grafana · incident timeline</text><text x="1462" y="1080" class="small">SLOs · service catalog · runbooks</text><text x="1462" y="1104" class="tiny">PagerDuty-compatible OSS: Grafana OnCall*</text></g>
+<path d="M1035 985V1001" class="telemetry"/><path d="M1300 985V1001" class="telemetry"/><path d="M1560 985V1001" class="telemetry"/>
+<text x="910" y="1165" class="tiny">Golden signals: availability · latency · traffic · errors · saturation · queue age · delivery lag · audit write failures</text>
+
+<!-- data flow legend and footer -->
+<path d="M55 1220h42" class="flow"/><text x="108" y="1224" class="tiny">Synchronous request / response</text><path d="M310 1220h42" class="event"/><text x="363" y="1224" class="tiny">Durable event / asynchronous work</text><path d="M604 1220h42" class="telemetry"/><text x="657" y="1224" class="tiny">Telemetry / trace flow</text>
+<text x="950" y="1224" class="tiny">OSS components shown as recommendations; choose equivalents by operational fit and support model.</text>
+</svg>
