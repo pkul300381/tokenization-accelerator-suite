@@ -1,10 +1,10 @@
 # Master Build Instructions: Opus Tokenization Accelerator Suite
 
-Version 1.0 · 2026-10-16 · Read this file first in every session. Then read `skill.md`. Then read the file the current task points to.
+Version 1.1 · 2026-10-17 · Read this file first in every session. Then read `skill.md`. Then read the file the current task points to.
 
 ## 1. Mission
 
-Build a production-grade web application that lets Opus teams and their clients select, configure and operate tokenization and stablecoin services. The application has eight services under one suite shell. Services 1 to 5 are business services. Services 6 to 8 are platform services that the business services depend on:
+Build a production-grade web application that lets Opus teams and their clients select, configure and operate tokenization and stablecoin services. The original eight services form the v1 baseline under one suite shell. The overall suite also includes ChainSync Integration Layer (S9) as a staged business-service extension. S1 to S5 and S9 are business services; S6 to S8 are shared platform services:
 
 1. **Stablecoin Selector**: choose a US-listed stablecoin, an infrastructure (custody and signing) provider, a layer-2 or permissioned ledger, and wallets. Output a validated configuration that can later drive deployment.
 2. **Wallet Adapter**: register, verify and manage wallets across custody types and chains.
@@ -14,6 +14,7 @@ Build a production-grade web application that lets Opus teams and their clients 
 6. **Compliance & Risk Engine**: a set of services that validates each operation against compliance requirements and evaluates the risk of each transaction. It returns an allow, review or block decision with reasons.
 7. **Notification Service**: a set of services that sends alerts to production support personnel. A notification is raised when a transaction is initiated on the blockchain, and a second notification is raised when that transaction succeeds or fails.
 8. **Token Gateway**: an API gateway that connects mobile apps and front-end websites to the back-end services, including the Wallet Adapter, the Notification Service and the other services.
+9. **ChainSync Integration Layer**: connect approved traditional financial message sources and off-chain corporate-action workflows to on-chain settlement. Target components include event ingestion, orchestration and exception management, oracle feeds, multi-chain routing, coupon automation, stablecoin delivery, ownership snapshots, reconciliation, compliance/reporting links and a versioned smart-contract template library. Treat network, vendor, audit, and jurisdiction-specific capabilities as unverified until validated. See S9 in `PRD.md` and section 15 of `API_AND_DATA.md`.
 
 The suite also has a goal of **automated deployment of the connected tools to AWS** from the saved configuration. That is a later phase. Do not build it before Phase 4 in `BUILD_PLAN.md`.
 
@@ -88,7 +89,7 @@ Regulatory context to confirm with Opus compliance and legal before launch (not 
 opus-tac-suite/
   apps/
     web/                 React frontend
-    api/                 Fastify backend (S1 to S7 modules, compliance and notification modules)
+    api/                 Fastify backend (S1 to S7 and S9 modules, compliance and notification modules)
     gateway/             Token Gateway: routing, auth, scopes, rate limits, version gate
   packages/
     shared/              Zod schemas, types, constants, catalogue seed data

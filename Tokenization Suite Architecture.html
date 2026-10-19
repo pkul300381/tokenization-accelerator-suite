@@ -1,0 +1,404 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Tokenization Suite Architecture</title>
+<style>
+:root{color-scheme:light;--bg:#f3f6fb;--panel:#ffffff;--ink:#0e1a2c;--muted:#4a5c74;--line:#becbdd;--zone:#e9eff8;--zoneLine:#aebfd6;--ok:#15803d;--spec:#b45309;--rec:#6d28d9;--event:#0e7490;--tele:#7c3aed;--accent:#1d63d8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0b1220;--panel:#15223a;--ink:#e8effa;--muted:#a3b5cc;--line:#36506f;--zone:#0f1b2f;--zoneLine:#2a3f5e;--ok:#34d399;--spec:#fbbf24;--rec:#c4b5fd;--event:#38bdf8;--tele:#a78bfa;--accent:#60a5fa;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b1220;--panel:#15223a;--ink:#e8effa;--muted:#a3b5cc;--line:#36506f;--zone:#0f1b2f;--zoneLine:#2a3f5e;--ok:#34d399;--spec:#fbbf24;--rec:#c4b5fd;--event:#38bdf8;--tele:#a78bfa;--accent:#60a5fa;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.5}
+.page{padding-block:28px 40px;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));max-width:1640px;margin:0 auto}
+.head{font-size:13px;color:var(--muted);margin:0 0 14px}
+.scroll{overflow-x:auto;border:1px solid var(--zoneLine);border-radius:14px;background:var(--bg)}
+svg{display:block;width:100%;min-width:1040px;height:auto}
+figcaption{color:var(--muted);font-size:13px;max-width:78ch;margin:16px 4px 0}
+.note-block{max-width:78ch;margin:20px 4px 0;color:var(--ink)}
+.ti{font-size:26px;font-weight:700;fill:var(--ink)}
+.sub{font-size:13px;fill:var(--muted)}
+.note{font-size:12px;fill:var(--muted)}
+.lg{font-size:12px;fill:var(--muted)}
+.zl{font-size:12px;font-weight:700;letter-spacing:1.2px;fill:var(--muted)}
+.zr{font-size:11px;fill:var(--muted)}
+.ct{font-size:13px;font-weight:700;fill:var(--ink)}
+.cl{font-size:11.5px;fill:var(--muted)}
+.al{font-size:11px;font-weight:600;fill:var(--muted)}
+.tile{font-size:10px;font-weight:700;fill:#ffffff}
+.card{fill:var(--panel);stroke:var(--line);stroke-width:1}
+.zone{fill:var(--zone);stroke:var(--zoneLine);stroke-width:1}
+.st{stroke:var(--panel);stroke-width:1.5}
+.st.ok{fill:var(--ok)} .st.spec{fill:var(--spec)} .st.rec{fill:var(--rec)}
+.ln{fill:none;stroke:var(--muted);stroke-width:1.6}
+.lne{fill:none;stroke:var(--event);stroke-width:1.8;stroke-dasharray:6 4}
+.lnt{fill:none;stroke:var(--tele);stroke-width:1.6;stroke-dasharray:2 4}
+.mkp{fill:var(--muted)} .mke{fill:var(--event)} .mkt{fill:var(--tele)}
+</style>
+<div class="page">
+<p class="head">Opus Tokenization Accelerator Suite · L3 and L4 architecture · built from the tokenization-accelerator-suite folder</p>
+<figure style="margin:0">
+<div class="scroll">
+<svg viewBox="0 0 1600 1600" role="img" aria-label="Layered platform architecture. Consumers and the APISIX token gateway enter at the top; eight application services and the ChainSync accelerator sit above PostgreSQL, the event backbone, Redis and object storage; adapters for custody, chains, financial data, compliance and delivery follow; security, observability and a GitOps delivery pipeline run alongside.">
+<defs>
+<marker id="mk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="mkp"/></marker>
+<marker id="mke" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="mke"/></marker>
+<marker id="mkt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="mkt"/></marker>
+</defs>
+<text x="40" y="44" class="ti">Opus Tokenization Accelerator Suite</text>
+<text x="40" y="68" class="sub">Platform architecture: L3 logical services and L4 runtime, cloud-agnostic and open-source first</text>
+<text x="40" y="90" class="note">Status read from the device folder on 19 Oct 2026. Only the APISIX gateway starter is in the repo; the rest is specified in the pack or recommended.</text>
+<circle cx="1048" cy="36" r="4.5" class="st ok"/>
+<text x="1060" y="40" class="lg">In repo today</text>
+<circle cx="1190" cy="36" r="4.5" class="st spec"/>
+<text x="1202" y="40" class="lg">Specified in pack</text>
+<circle cx="1340" cy="36" r="4.5" class="st rec"/>
+<text x="1352" y="40" class="lg">Recommended OSS [VERIFY]</text>
+<rect x="40" y="116" width="1520" height="176" rx="16" class="zone"/>
+<text x="60" y="142" class="zl">1 · EXPERIENCE, EDGE AND IDENTITY</text>
+<text x="1540" y="142" class="zr" text-anchor="end">Entry path for every request</text>
+<rect x="60" y="152" width="260" height="130" rx="12" class="card"/>
+<circle cx="306" cy="168" r="4.5" class="st spec"/>
+<text x="76" y="176" class="ct">Consumers</text>
+<text x="76" y="197" class="cl">React web console (operators)</text>
+<text x="76" y="214" class="cl">Future iOS and Android apps</text>
+<text x="76" y="231" class="cl">Partner and institutional API</text>
+<rect x="340" y="152" width="260" height="130" rx="12" class="card"/>
+<circle cx="586" cy="168" r="4.5" class="st rec"/>
+<text x="356" y="176" class="ct">Edge and ingress</text>
+<text x="356" y="197" class="cl">TLS termination, HTTP/2</text>
+<text x="356" y="214" class="cl">Ingress: NGINX or Traefik [choose]</text>
+<text x="356" y="231" class="cl">Optional WAF engine [VERIFY]</text>
+<rect x="356" y="255" width="87" height="17" rx="5" fill="#0f766e"/>
+<text x="363" y="267" class="tile">cert-manager</text>
+<rect x="620" y="152" width="560" height="130" rx="12" class="card"/>
+<circle cx="1166" cy="168" r="4.5" class="st ok"/>
+<text x="636" y="176" class="ct">S8 Token Gateway · Apache APISIX</text>
+<text x="636" y="197" class="cl">✓  OIDC bearer checks, request IDs, proxy to upstream</text>
+<text x="636" y="214" class="cl">✓  Nine public route families generated from routes.mjs</text>
+<text x="636" y="231" class="cl">○  Health, version gate, scope and mobile checks</text>
+<text x="636" y="248" class="cl">○  Idempotency, body limits, Redis quotas, TLS/CORS, body-free logs</text>
+<rect x="636" y="255" width="124" height="17" rx="5" fill="#2563eb"/>
+<text x="643" y="267" class="tile">Apache APISIX 3.19</text>
+<rect x="766" y="255" width="118" height="17" rx="5" fill="#2563eb"/>
+<text x="773" y="267" class="tile">Standalone config</text>
+<rect x="890" y="255" width="87" height="17" rx="5" fill="#15803d"/>
+<text x="897" y="267" class="tile">Redis quotas</text>
+<rect x="1200" y="152" width="340" height="130" rx="12" class="card"/>
+<circle cx="1526" cy="168" r="4.5" class="st rec"/>
+<text x="1216" y="176" class="ct">Identity and access</text>
+<text x="1216" y="197" class="cl">OIDC and OAuth2 provider</text>
+<text x="1216" y="214" class="cl">RBAC, tenant and resource scopes</text>
+<text x="1216" y="231" class="cl">Short-lived tokens, step-up auth</text>
+<rect x="1216" y="255" width="63" height="17" rx="5" fill="#7c3aed"/>
+<text x="1223" y="267" class="tile">Keycloak</text>
+<path d="M321 217 H339" class="ln" marker-end="url(#mk)"/>
+<path d="M601 217 H619" class="ln" marker-end="url(#mk)"/>
+<path d="M1181 217 H1199" class="ln" marker-end="url(#mk)"/>
+<rect x="40" y="312" width="1520" height="300" rx="16" class="zone"/>
+<text x="60" y="338" class="zl">2 · APPLICATION SERVICES  ·  modular monolith first, split on evidence</text>
+<text x="1540" y="338" class="zr" text-anchor="end">Suite S1 to S5 business · S6 to S8 platform · ChainSync separate</text>
+<rect x="60" y="348" width="285" height="112" rx="12" class="card"/>
+<circle cx="331" cy="364" r="4.5" class="st spec"/>
+<text x="76" y="372" class="ct">S1 Stablecoin Selector</text>
+<text x="76" y="393" class="cl">Eligible stablecoin registry</text>
+<text x="76" y="410" class="cl">Issuer and chain policy checks</text>
+<text x="76" y="427" class="cl">Versioned selection rules</text>
+<rect x="359" y="348" width="285" height="112" rx="12" class="card"/>
+<circle cx="630" cy="364" r="4.5" class="st spec"/>
+<text x="375" y="372" class="ct">S2 Wallet Adapter</text>
+<text x="375" y="393" class="cl">Signed-challenge ownership proof</text>
+<text x="375" y="410" class="cl">Holder wallet registry</text>
+<text x="375" y="427" class="cl">EIP-1193 wallets, MetaMask</text>
+<rect x="375" y="433" width="63" height="17" rx="5" fill="#4338ca"/>
+<text x="382" y="445" class="tile">MetaMask</text>
+<rect x="658" y="348" width="285" height="112" rx="12" class="card"/>
+<circle cx="929" cy="364" r="4.5" class="st spec"/>
+<text x="674" y="372" class="ct">S3 Fiat Conversion Bridge</text>
+<text x="674" y="393" class="cl">Quote lifecycle and expiry</text>
+<text x="674" y="410" class="cl">Stablecoin conversion via provider</text>
+<text x="674" y="427" class="cl">Rate and time recorded</text>
+<rect x="956" y="348" width="285" height="112" rx="12" class="card"/>
+<circle cx="1227" cy="364" r="4.5" class="st spec"/>
+<text x="972" y="372" class="ct">S4 Gas Fee Calculator</text>
+<text x="972" y="393" class="cl">Fee estimates per network</text>
+<text x="972" y="410" class="cl">Cost lines for each batch</text>
+<text x="972" y="427" class="cl">Refuses stale estimates</text>
+<rect x="1255" y="348" width="285" height="112" rx="12" class="card"/>
+<circle cx="1526" cy="364" r="4.5" class="st spec"/>
+<text x="1271" y="372" class="ct">S5 Audit and Reporting</text>
+<text x="1271" y="393" class="cl">Append-only, hash-chained log</text>
+<text x="1271" y="410" class="cl">Exports and evidence packs</text>
+<text x="1271" y="427" class="cl">Actor, request, policy version</text>
+<rect x="60" y="472" width="285" height="112" rx="12" class="card"/>
+<circle cx="331" cy="488" r="4.5" class="st spec"/>
+<text x="76" y="496" class="ct">S6 Compliance and Risk Engine</text>
+<text x="76" y="517" class="cl">Allow, review or block decisions</text>
+<text x="76" y="534" class="cl">Versioned rules, screening refs</text>
+<text x="76" y="551" class="cl">Case queue and decision evidence</text>
+<rect x="359" y="472" width="285" height="112" rx="12" class="card"/>
+<circle cx="630" cy="488" r="4.5" class="st spec"/>
+<text x="375" y="496" class="ct">S7 Notification Service</text>
+<text x="375" y="517" class="cl">Templates, routing, escalation</text>
+<text x="375" y="534" class="cl">Deduplication, delivery status</text>
+<text x="375" y="551" class="cl">Consumes durable domain events</text>
+<rect x="658" y="472" width="583" height="112" rx="12" class="card"/>
+<rect x="658" y="482" width="4" height="92" rx="2" fill="#4338ca"/>
+<circle cx="1227" cy="488" r="4.5" class="st spec"/>
+<text x="674" y="496" class="ct">ChainSync accelerator  ·  CS-01 to CS-09</text>
+<text x="674" y="517" class="cl">ISO 20022 listener, coupon automator, oracle connector</text>
+<text x="674" y="534" class="cl">Multi-chain router, stablecoin delivery rail, ledger scan</text>
+<text x="674" y="551" class="cl">Reconciliation, KYC wallet registry, smart contract library</text>
+<rect x="1255" y="472" width="285" height="112" rx="12" class="card"/>
+<circle cx="1526" cy="488" r="4.5" class="st spec"/>
+<text x="1271" y="496" class="ct">Operator console</text>
+<text x="1271" y="517" class="cl">Event, batch and exception views</text>
+<text x="1271" y="534" class="cl">Multi-signature approvals</text>
+<text x="1271" y="551" class="cl">Holder data masked by default</text>
+<rect x="40" y="636" width="1520" height="156" rx="16" class="zone"/>
+<text x="60" y="662" class="zl">3 · STATE, EVENTS AND ASYNC WORK</text>
+<text x="1540" y="662" class="zr" text-anchor="end">Outbox first, then broker: no dual writes</text>
+<rect x="60" y="672" width="235" height="112" rx="12" class="card"/>
+<circle cx="281" cy="688" r="4.5" class="st spec"/>
+<text x="76" y="696" class="ct">PostgreSQL</text>
+<text x="76" y="717" class="cl">Tenant data, migrations</text>
+<text x="76" y="734" class="cl">Outbox and idempotency keys</text>
+<text x="76" y="751" class="cl">PITR backups, encryption</text>
+<rect x="76" y="757" width="75" height="17" rx="5" fill="#15803d"/>
+<text x="83" y="769" class="tile">PostgreSQL</text>
+<rect x="309" y="672" width="235" height="112" rx="12" class="card"/>
+<circle cx="530" cy="688" r="4.5" class="st rec"/>
+<text x="325" y="696" class="ct">Debezium CDC</text>
+<text x="325" y="717" class="cl">Streams outbox rows</text>
+<text x="325" y="734" class="cl">Ordered per aggregate</text>
+<text x="325" y="751" class="cl">At-least-once delivery</text>
+<rect x="325" y="757" width="63" height="17" rx="5" fill="#0e7490"/>
+<text x="332" y="769" class="tile">Debezium</text>
+<rect x="558" y="672" width="235" height="112" rx="12" class="card"/>
+<circle cx="779" cy="688" r="4.5" class="st rec"/>
+<text x="574" y="696" class="ct">Event backbone</text>
+<text x="574" y="717" class="cl">NATS JetStream by default</text>
+<text x="574" y="734" class="cl">Kafka for scale or replay</text>
+<text x="574" y="751" class="cl">Apicurio schema registry</text>
+<rect x="574" y="757" width="38" height="17" rx="5" fill="#0e7490"/>
+<text x="581" y="769" class="tile">NATS</text>
+<rect x="618" y="757" width="44" height="17" rx="5" fill="#0e7490"/>
+<text x="625" y="769" class="tile">Kafka</text>
+<rect x="807" y="672" width="235" height="112" rx="12" class="card"/>
+<circle cx="1028" cy="688" r="4.5" class="st rec"/>
+<text x="823" y="696" class="ct">Redis or Valkey</text>
+<text x="823" y="717" class="cl">Quotas, locks, short cache</text>
+<text x="823" y="734" class="cl">Never the source of truth</text>
+<text x="823" y="751" class="cl">Gateway rate limits</text>
+<rect x="823" y="757" width="44" height="17" rx="5" fill="#b91c1c"/>
+<text x="830" y="769" class="tile">Redis</text>
+<rect x="1056" y="672" width="235" height="112" rx="12" class="card"/>
+<circle cx="1277" cy="688" r="4.5" class="st spec"/>
+<text x="1072" y="696" class="ct">Workers</text>
+<text x="1072" y="717" class="cl">Watchers, exports, reconcile</text>
+<text x="1072" y="734" class="cl">Bounded retries and concurrency</text>
+<text x="1072" y="751" class="cl">Temporal for long sagas [decide]</text>
+<rect x="1305" y="672" width="235" height="112" rx="12" class="card"/>
+<circle cx="1526" cy="688" r="4.5" class="st rec"/>
+<text x="1321" y="696" class="ct">Object storage</text>
+<text x="1321" y="717" class="cl">S3 API for reports and evidence</text>
+<text x="1321" y="734" class="cl">Object lock, lifecycle rules</text>
+<rect x="1321" y="757" width="44" height="17" rx="5" fill="#475569"/>
+<text x="1328" y="769" class="tile">MinIO</text>
+<path d="M296 728 H308" class="lne" marker-end="url(#mke)"/>
+<path d="M545 728 H557" class="lne" marker-end="url(#mke)"/>
+<rect x="40" y="812" width="1520" height="156" rx="16" class="zone"/>
+<text x="60" y="838" class="zl">4 · ADAPTER BOUNDARY  ·  contracts in packages/adapters  ·  mock, then sandbox, then live</text>
+<text x="1540" y="838" class="zr" text-anchor="end">Vendor errors normalised; networks [VERIFY]</text>
+<rect x="60" y="848" width="285" height="112" rx="12" class="card"/>
+<circle cx="331" cy="864" r="4.5" class="st spec"/>
+<text x="76" y="872" class="ct">Custody and signing</text>
+<text x="76" y="893" class="cl">Keys stay in HSM or custodian</text>
+<text x="76" y="910" class="cl">Multi-sig contracts [VERIFY]</text>
+<text x="76" y="927" class="cl">Batch hash shown at signing</text>
+<rect x="76" y="933" width="57" height="17" rx="5" fill="#b91c1c"/>
+<text x="83" y="945" class="tile">OpenBao</text>
+<rect x="139" y="933" width="106" height="17" rx="5" fill="#475569"/>
+<text x="146" y="945" class="tile">HSM / custodian</text>
+<rect x="359" y="848" width="285" height="112" rx="12" class="card"/>
+<circle cx="630" cy="864" r="4.5" class="st rec"/>
+<text x="375" y="872" class="ct">Chain and ledger</text>
+<text x="375" y="893" class="cl">Public: Ethereum, Base, Polygon</text>
+<text x="375" y="910" class="cl">Permissioned: Besu, Fabric, Canton</text>
+<text x="375" y="927" class="cl">Per-tenant network allowlist</text>
+<rect x="375" y="933" width="38" height="17" rx="5" fill="#4338ca"/>
+<text x="382" y="945" class="tile">Besu</text>
+<rect x="419" y="933" width="51" height="17" rx="5" fill="#4338ca"/>
+<text x="426" y="945" class="tile">Fabric</text>
+<rect x="476" y="933" width="51" height="17" rx="5" fill="#4338ca"/>
+<text x="483" y="945" class="tile">Canton</text>
+<rect x="658" y="848" width="285" height="112" rx="12" class="card"/>
+<circle cx="929" cy="864" r="4.5" class="st spec"/>
+<text x="674" y="872" class="ct">Financial data</text>
+<text x="674" y="893" class="cl">FX rates and gas estimates</text>
+<text x="674" y="910" class="cl">Oracles for SOFR and NAV</text>
+<text x="674" y="927" class="cl">Timestamp, freshness, provenance</text>
+<rect x="956" y="848" width="285" height="112" rx="12" class="card"/>
+<circle cx="1227" cy="864" r="4.5" class="st spec"/>
+<text x="972" y="872" class="ct">Compliance data</text>
+<text x="972" y="893" class="cl">KYC provider references only</text>
+<text x="972" y="910" class="cl">Screening lists, versioned</text>
+<text x="972" y="927" class="cl">Evidence and source version kept</text>
+<rect x="972" y="933" width="63" height="17" rx="5" fill="#4338ca"/>
+<text x="979" y="945" class="tile">KYC refs</text>
+<rect x="1255" y="848" width="285" height="112" rx="12" class="card"/>
+<circle cx="1526" cy="864" r="4.5" class="st rec"/>
+<text x="1271" y="872" class="ct">Delivery channels</text>
+<text x="1271" y="893" class="cl">Email (SMTP), chat, paging, push</text>
+<text x="1271" y="910" class="cl">Vendor errors normalised</text>
+<text x="1271" y="927" class="cl">Secrets from OpenBao</text>
+<rect x="1271" y="933" width="38" height="17" rx="5" fill="#475569"/>
+<text x="1278" y="945" class="tile">SMTP</text>
+<rect x="1315" y="933" width="38" height="17" rx="5" fill="#475569"/>
+<text x="1322" y="945" class="tile">Chat</text>
+<rect x="1359" y="933" width="51" height="17" rx="5" fill="#475569"/>
+<text x="1366" y="945" class="tile">Paging</text>
+<rect x="40" y="988" width="720" height="200" rx="16" class="zone"/>
+<text x="60" y="1014" class="zl">5 · SECURITY AND POLICY</text>
+<rect x="776" y="988" width="784" height="200" rx="16" class="zone"/>
+<text x="796" y="1014" class="zl">OBSERVABILITY  ·  OPENTELEMETRY FIRST</text>
+<rect x="60" y="1028" width="334" height="46" rx="12" class="card"/>
+<circle cx="380" cy="1044" r="4.5" class="st rec"/>
+<text x="74" y="1046" class="ct">OPA · policy as code</text>
+<text x="74" y="1063" class="cl">Authz rules, CI and admission policy</text>
+<rect x="406" y="1028" width="334" height="46" rx="12" class="card"/>
+<circle cx="726" cy="1044" r="4.5" class="st rec"/>
+<text x="420" y="1046" class="ct">Kyverno · admission</text>
+<text x="420" y="1063" class="cl">Signed images only, no privileged pods</text>
+<rect x="60" y="1080" width="334" height="46" rx="12" class="card"/>
+<circle cx="380" cy="1096" r="4.5" class="st rec"/>
+<text x="74" y="1098" class="ct">OpenBao · secrets</text>
+<text x="74" y="1115" class="cl">Short-lived credentials, rotation, audit</text>
+<rect x="406" y="1080" width="334" height="46" rx="12" class="card"/>
+<circle cx="726" cy="1096" r="4.5" class="st rec"/>
+<text x="420" y="1098" class="ct">Mutual TLS [choose]</text>
+<text x="420" y="1115" class="cl">Linkerd or SPIFFE/SPIRE, default-deny east-west</text>
+<rect x="60" y="1132" width="334" height="46" rx="12" class="card"/>
+<circle cx="380" cy="1148" r="4.5" class="st rec"/>
+<text x="74" y="1150" class="ct">Data protection</text>
+<text x="74" y="1167" class="cl">Holder data masked; every reveal audited</text>
+<rect x="406" y="1132" width="334" height="46" rx="12" class="card"/>
+<circle cx="726" cy="1148" r="4.5" class="st rec"/>
+<text x="420" y="1150" class="ct">Supply-chain gate</text>
+<text x="420" y="1167" class="cl">Cosign verify, Trivy and Syft results enforced</text>
+<rect x="796" y="1028" width="239" height="66" rx="12" class="card"/>
+<circle cx="1021" cy="1044" r="4.5" class="st rec"/>
+<text x="810" y="1046" class="ct">OpenTelemetry</text>
+<text x="810" y="1063" class="cl">OTLP SDKs and Collector</text>
+<text x="810" y="1078" class="cl">W3C trace context, redaction</text>
+<rect x="1049" y="1028" width="239" height="66" rx="12" class="card"/>
+<circle cx="1274" cy="1044" r="4.5" class="st rec"/>
+<text x="1063" y="1046" class="ct">Metrics and alerts</text>
+<text x="1063" y="1063" class="cl">Prometheus, Alertmanager</text>
+<text x="1063" y="1078" class="cl">SLO burn, queue age, adapter health</text>
+<rect x="1301" y="1028" width="239" height="66" rx="12" class="card"/>
+<circle cx="1526" cy="1044" r="4.5" class="st rec"/>
+<text x="1315" y="1046" class="ct">Logs and traces</text>
+<text x="1315" y="1063" class="cl">Loki and Tempo</text>
+<text x="1315" y="1078" class="cl">Retention, access control</text>
+<rect x="796" y="1102" width="365" height="66" rx="12" class="card"/>
+<circle cx="1147" cy="1118" r="4.5" class="st rec"/>
+<text x="810" y="1120" class="ct">Grafana</text>
+<text x="810" y="1137" class="cl">Dashboards, SLOs, Explore</text>
+<text x="810" y="1152" class="cl">Runbook link on every alert</text>
+<rect x="1175" y="1102" width="365" height="66" rx="12" class="card"/>
+<circle cx="1526" cy="1118" r="4.5" class="st rec"/>
+<text x="1189" y="1120" class="ct">Alert routing</text>
+<text x="1189" y="1137" class="cl">Chat, paging and on-call receivers</text>
+<text x="1189" y="1152" class="cl">Dedupe, silence, escalation</text>
+<rect x="40" y="1208" width="1520" height="150" rx="16" class="zone"/>
+<text x="60" y="1234" class="zl">6 · DELIVERY  ·  CI/CD, GITOPS AND SUPPLY CHAIN</text>
+<text x="1540" y="1234" class="zr" text-anchor="end">Same images and manifests for ECS or Kubernetes [decision pending]</text>
+<rect x="60" y="1244" width="235" height="100" rx="12" class="card"/>
+<circle cx="281" cy="1260" r="4.5" class="st rec"/>
+<text x="76" y="1268" class="ct">Source and review</text>
+<text x="76" y="1289" class="cl">Forgejo or GitLab CE</text>
+<text x="76" y="1306" class="cl">PRs, CODEOWNERS, ADRs</text>
+<rect x="309" y="1244" width="235" height="100" rx="12" class="card"/>
+<circle cx="530" cy="1260" r="4.5" class="st rec"/>
+<text x="325" y="1268" class="ct">CI automation</text>
+<text x="325" y="1289" class="cl">Woodpecker or Tekton</text>
+<text x="325" y="1306" class="cl">Lint, unit, contract, replay</text>
+<rect x="558" y="1244" width="235" height="100" rx="12" class="card"/>
+<circle cx="779" cy="1260" r="4.5" class="st rec"/>
+<text x="574" y="1268" class="ct">Security scans</text>
+<text x="574" y="1289" class="cl">Semgrep, Gitleaks</text>
+<text x="574" y="1306" class="cl">Trivy and Syft (SBOM)</text>
+<rect x="807" y="1244" width="235" height="100" rx="12" class="card"/>
+<circle cx="1028" cy="1260" r="4.5" class="st rec"/>
+<text x="823" y="1268" class="ct">Build and sign</text>
+<text x="823" y="1289" class="cl">BuildKit, Harbor registry</text>
+<text x="823" y="1306" class="cl">Cosign, SLSA provenance</text>
+<rect x="1056" y="1244" width="235" height="100" rx="12" class="card"/>
+<circle cx="1277" cy="1260" r="4.5" class="st rec"/>
+<text x="1072" y="1268" class="ct">GitOps promotion</text>
+<text x="1072" y="1289" class="cl">Argo CD or Flux [choose]</text>
+<text x="1072" y="1306" class="cl">Dev, stage, prod gates</text>
+<rect x="1305" y="1244" width="235" height="100" rx="12" class="card"/>
+<circle cx="1526" cy="1260" r="4.5" class="st rec"/>
+<text x="1321" y="1268" class="ct">Infrastructure</text>
+<text x="1321" y="1289" class="cl">OpenTofu, Helm, Kustomize</text>
+<text x="1321" y="1306" class="cl">Plan, policy, approve, apply</text>
+<path d="M296 1294 H308" class="ln" marker-end="url(#mk)"/>
+<path d="M545 1294 H557" class="ln" marker-end="url(#mk)"/>
+<path d="M794 1294 H806" class="ln" marker-end="url(#mk)"/>
+<path d="M1043 1294 H1055" class="ln" marker-end="url(#mk)"/>
+<path d="M1292 1294 H1304" class="ln" marker-end="url(#mk)"/>
+<rect x="40" y="1382" width="1520" height="116" rx="16" class="zone"/>
+<text x="60" y="1408" class="zl">7 · DEVELOPER PLATFORM AND GOVERNANCE</text>
+<text x="1540" y="1408" class="zr" text-anchor="end">Ownership, contracts and decisions in version control</text>
+<rect x="60" y="1418" width="360" height="72" rx="12" class="card"/>
+<circle cx="406" cy="1434" r="4.5" class="st rec"/>
+<text x="74" y="1436" class="ct">Developer portal</text>
+<text x="74" y="1453" class="cl">Backstage catalog and templates</text>
+<text x="74" y="1468" class="cl">Ownership, SLOs, runbook links</text>
+<rect x="434" y="1418" width="360" height="72" rx="12" class="card"/>
+<circle cx="780" cy="1434" r="4.5" class="st rec"/>
+<text x="448" y="1436" class="ct">Local stack</text>
+<text x="448" y="1453" class="cl">Docker Compose in token-gateway/</text>
+<text x="448" y="1468" class="cl">OIDC secrets from environment only</text>
+<rect x="807" y="1418" width="360" height="72" rx="12" class="card"/>
+<circle cx="1153" cy="1434" r="4.5" class="st rec"/>
+<text x="821" y="1436" class="ct">Decisions and threats</text>
+<text x="821" y="1453" class="cl">docs/DECISIONS.md (DEC-001, 002)</text>
+<text x="821" y="1468" class="cl">Threat model per service</text>
+<rect x="1180" y="1418" width="360" height="72" rx="12" class="card"/>
+<circle cx="1526" cy="1434" r="4.5" class="st rec"/>
+<text x="1194" y="1436" class="ct">Contracts</text>
+<text x="1194" y="1453" class="cl">OpenAPI and event schemas</text>
+<text x="1194" y="1468" class="cl">Versioned, contract tests in CI</text>
+<path d="M901 282 V311" class="ln" marker-end="url(#mk)"/>
+<text x="908" y="304" class="al">routes by prefix to upstream api</text>
+<path d="M760 612 V635" class="lne" marker-end="url(#mke)"/>
+<text x="768" y="627" class="al">outbox to CDC to events</text>
+<path d="M760 792 V811" class="lne" marker-end="url(#mke)"/>
+<text x="768" y="806" class="al">durable work</text>
+<path d="M1560 430 H1584 V1060 H1560" class="lnt" marker-end="url(#mkt)"/>
+<path d="M60 1530 H100" class="ln"/>
+<text x="110" y="1534" class="lg">Synchronous request and response</text>
+<path d="M360 1530 H400" class="lne"/>
+<text x="410" y="1534" class="lg">Durable event or asynchronous work</text>
+<path d="M700 1530 H740" class="lnt"/>
+<text x="750" y="1534" class="lg">Telemetry: OTLP traces, metrics, logs</text>
+<text x="40" y="1566" class="note">Runtime: containers on AWS ECS per DEC-001, or Kubernetes; the same images and contracts run on either. Argo CD applies to Kubernetes, while ECS deploys through OpenTofu [decision pending].</text>
+<text x="40" y="1584" class="note">Product names are text tiles, not logos: swap in official marks from each vendor's brand kit. Recommendations are not yet adopted; every [VERIFY] item is checked before build.</text>
+</svg>
+</div>
+<figcaption>Layers run top to bottom: experience and edge, application services, state and events, adapters, security and observability, delivery, then developer governance. The status dots show what exists today in the repo, what is specified in the pack, and what is a recommendation still to verify.</figcaption>
+</figure>
+<div class="note-block">
+<p>This version corrects the earlier platform diagram in three places. The ingress is APISIX, as DEC-001 records, rather than a separate HAProxy or Envoy layer. Redis is the quota store per DEC-001, with Valkey as the drop-in alternative. ChainSync is shown as its own accelerator rather than as service S9.</p>
+<p>Still open: Kubernetes or ECS for production, the event backbone (NATS JetStream or Kafka), whether Temporal runs the long ChainSync workflows, and the multi-signature option for each network [VERIFY]. The gateway starter still needs the health and version endpoints, the version gate, scope and mobile enforcement, and the Redis quotas before it matches TOKEN_GATEWAY.md.</p>
+</div>
+</div>
+
+<script>
+window.addEventListener('message',function(event){
+  if(event.source!==window.parent||!event.data||event.data.type!=='opus-theme')return;
+  var theme=event.data.theme;
+  if(theme==='light'||theme==='dark')document.documentElement.setAttribute('data-theme',theme);
+  else document.documentElement.removeAttribute('data-theme');
+});
+</script>
+</body></html>

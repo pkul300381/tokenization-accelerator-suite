@@ -1,6 +1,6 @@
 # API and Data Contracts: Opus Tokenization Accelerator Suite
 
-Version 1.0 · 2026-10-16 · All endpoints are under `/v1`. JSON in and out. Errors use the problem format below. Money amounts are decimal strings with an explicit `currency` or `asset` and `decimals`.
+Version 1.1 · 2026-10-17 · All endpoints are under `/v1`. JSON in and out. Errors use the problem format below. Money amounts are decimal strings with an explicit `currency` or `asset` and `decimals`.
 
 ## 1. Conventions
 
@@ -278,16 +278,27 @@ Tables, primary keys in bold in the description:
 - `notifications`: **id**, tenant_id, event_id, dedupe_key, thread_key, severity, channel_id, status (queued, sent, failed, acknowledged, escalated), attempts, sent_at, acknowledged_by, acknowledged_at.
 - `devices`: **id**, user_id, platform, push_token_ref, app_version, last_seen_at, revoked_at.
 - `gateway_clients`: **id**, name, platform, status, min_version, scopes.
+- `chainsync_sources`: **id**, tenant_id, source_type, secret_ref, status, schema_version, created_at. Store only secret references; source credentials are managed outside the application database.
+- `chainsync_events`: **id**, tenant_id, source_id, source_event_id, event_type, schema_version, payload_hash, occurred_at, received_at, status. Unique (tenant_id, source_id, source_event_id); minimize or redact retained payload data.
+- `corporate_actions`: **id**, tenant_id, action_type, asset_id, record_date, payment_date, rule_version, state, source_event_id, created_by, created_at.
+- `oracle_observations`: **id**, tenant_id, provider, feed, asset, value, observed_at, received_at, freshness_status, source_ref. Values use decimal strings/numeric storage and retain provenance.
+- `chainsync_settlement_runs`: **id**, tenant_id, corporate_action_id, chain, template_id, template_version, simulation_id, status, approval_count, required_approvals, idempotency_ref, transaction_id, created_at.
+- `chainsync_reconciliation_runs`: **id**, tenant_id, chain, as_of, status, started_at, completed_at, source_refs.
+- `chainsync_reconciliation_breaks`: **id**, run_id, entity_ref, expected_position, observed_position, difference, status, proposed_repair, approved_by, created_at.
+- `chainsync_contract_templates`: **id**, name, version, schema, audit_status, audit_evidence_ref, status, created_at. Do not call a template pre-audited without recorded evidence and scope.
+- `chainsync_simulations`: **id**, settlement_run_id, input_hash, outcome, gas_estimate, template_version, simulated_at, details_ref.
 
 Money columns are `numeric(38,18)` in the database and returned as strings. Indexes: audit_events on (tenant_id, occurred_at), (entity_type, entity_id); wallets on (tenant_id, chain); conversions on (state, updated_at).
 
 ## 10. Events (internal)
 
-Domain events are published to a queue after the database commit (transactional outbox). Names: `configuration.saved`, `blueprint.versioned`, `wallet.registered`, `wallet.verified`, `quote.created`, `quote.expired`, `conversion.state_changed`, `export.completed`, `deployment.state_changed`, `chain_tx.submitted`, `chain_tx.confirmed`, `chain_tx.failed`, `compliance.decision_recorded`, `notification.delivery_failed`. Consumers must be idempotent.
+Domain events are published to a queue after the database commit (transactional outbox). Names: `configuration.saved`, `blueprint.versioned`, `wallet.registered`, `wallet.verified`, `quote.created`, `quote.expired`, `conversion.state_changed`, `export.completed`, `deployment.state_changed`, `chain_tx.submitted`, `chain_tx.confirmed`, `chain_tx.failed`, `compliance.decision_recorded`, `notification.delivery_failed`, `chainsync.event_ingested`, `chainsync.action_scheduled`, `chainsync.settlement_submitted`, `chainsync.reconciliation_break_found`. Consumers must be idempotent. ChainSync events include source/event IDs, schema/rule versions, correlation IDs and timestamps; event payloads must not contain credentials, private keys or unnecessary personal data.
 
 ## 11. Rate limits
 
 Quote creation: 30 per minute per user. Wallet registration: 10 per minute per user. Deployment start: 5 per hour per tenant. Export creation: 10 per hour per user. Returned as 429 with `Retry-After`. These limits are enforced at the Token Gateway, per user, per device and per client application.
+
+ChainSync write and execution quotas are not set yet. Define bounded per-tenant and per-client limits after expected event/action volume, actor roles, and adapter behavior are validated; do not enable public execution routes without these limits.
 
 ## 12. Compliance and risk engine (S6)
 
@@ -374,6 +385,7 @@ The gateway forwards each public path to its upstream service after checking the
 | `/v1/compliance` | api (S6) | compliance.read, compliance.decide | no |
 | `/v1/notifications` | api (S7) | notifications.read, notifications.ack | yes |
 | `/v1/deployments` | api | deploy.start, deploy.read | no |
+| `/v1/chainsync` | api (S9) | chainsync.read, chainsync.manage, chainsync.execute | no |
 
 Gateway endpoints: `GET /v1/gateway/health` returns 200 when the gateway can reach its dependencies. `GET /v1/gateway/version` returns the minimum supported version per platform.
 
@@ -388,3 +400,44 @@ Version rejection:
   "requestId": "req_7f3a"
 }
 ```
+
+## 15. ChainSync Integration Layer (S9 extension)
+
+The public API below exposes authorized ChainSync workflows to the suite UI. Partner message intake (ISO 20022, SWIFT, FIX, custodian APIs and webhooks) uses private authenticated adapters; do not expose partner credentials or accept unsigned partner payloads through the public client routes.
+
+| Method | Path | Roles | Purpose |
+|---|---|---|---|
+| GET | `/v1/chainsync/networks` | architect, operations, compliance, viewer | Tenant-enabled network/ledger adapters and capabilities |
+| GET | `/v1/chainsync/contract-templates` | architect, operations, compliance, viewer | Versioned contract templates and audit/review status |
+| GET | `/v1/chainsync/actions` | architect, operations, compliance, viewer | Corporate actions and settlement runs, filterable by status, type and chain |
+| POST | `/v1/chainsync/actions` | architect, operations | Create a corporate action from validated off-chain inputs |
+| GET | `/v1/chainsync/actions/{id}` | architect, operations, compliance, viewer | Action state, source references, calculation and audit summary |
+| POST | `/v1/chainsync/actions/{id}/simulate` | architect, operations | Simulate entitlements and contract execution; no transaction is submitted |
+| POST | `/v1/chainsync/actions/{id}/approve` | operations, admin | Record an approval through the configured custody/multisig workflow |
+| POST | `/v1/chainsync/actions/{id}/execute` | operations, admin | Submit an approved and simulated settlement run |
+| GET | `/v1/chainsync/reconciliations` | architect, operations, compliance, viewer | Reconciliation runs and open breaks |
+| GET | `/v1/chainsync/reconciliations/{id}` | architect, operations, compliance, viewer | Position comparison, break evidence and proposed repair actions |
+| POST | `/v1/chainsync/reconciliations/{id}/repairs/{breakId}/approve` | operations, admin | Approve a proposed repair; execution uses the regular policy and authorization path |
+
+All state-changing requests require `Idempotency-Key`. Approval and execution are separate actions. A simulation is stored as a record for audit and therefore also requires an idempotency key. Responses include `requestId`, action/run state, rule/template versions and source timestamps. Error responses use the problem format in section 1.
+
+Example action summary:
+
+```json
+{
+  "id": "csa_01",
+  "type": "coupon_payment",
+  "assetId": "asset_01",
+  "recordDate": "2026-10-01",
+  "paymentDate": "2026-10-31",
+  "rateSource": { "provider": "oracle_demo", "observedAt": "2026-10-16T12:00:00Z", "freshness": "fresh" },
+  "template": { "id": "coupon-fixed", "version": 2, "auditStatus": "review_required" },
+  "status": "draft",
+  "simulationId": null,
+  "approvalCount": 0,
+  "requiredApprovals": 2,
+  "chain": "canton"
+}
+```
+
+Template audit status is explicit; do not describe a template as pre-audited unless the audit evidence and its scope are recorded. Candidate network names (Ethereum, Solana, Avalanche, Hyperledger Fabric, R3 Corda, Kinexys, GS DAP and Canton), oracle providers, tax forms, AML rules and Travel Rule behavior require deployment-specific validation. The API must report only network integrations enabled for the tenant. KYC documents and private keys are never stored by S9.

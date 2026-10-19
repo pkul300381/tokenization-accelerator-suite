@@ -28,10 +28,10 @@ Build in the order set out in `BUILD_PLAN.md`. Do not ask the assistant to gener
 
 ## Assumptions in this pack
 
-The pack assumes the scope in the Opus Tokenization Accelerator Suite prototype and its extension. It has eight services. Five are business services: Stablecoin Selector, Wallet Adapter, Fiat Conversion Bridge, Gas Fee Calculator, and Audit and Reporting. Three are platform services: the Compliance & Risk Engine, the Notification Service, and the Token Gateway that connects web and mobile clients to the back end. The pack also includes a service selection shell and an eventual goal of automating deployment of the connected tools to AWS.
+The pack assumes the scope in the Opus Tokenization Accelerator Suite prototype and its extensions. The original eight services remain the v1 baseline. ChainSync Integration Layer (S9) extends the overall suite as a staged offering. The suite therefore has six business services: Stablecoin Selector, Wallet Adapter, Fiat Conversion Bridge, Gas Fee Calculator, Audit and Reporting, and ChainSync. Three platform services support them: the Compliance & Risk Engine, Notification Service, and Token Gateway. The pack also includes a service selection shell and an eventual goal of automating deployment of the connected tools to AWS.
 
 Vendor features, chain parameters, stablecoin listing status and regulatory positions are not verified in this pack. Every such item is marked **[VERIFY]** and must be confirmed against current vendor documentation and by Opus compliance and legal before build or launch. Nothing in this pack authorises moving real funds.
 
 ## Status
 
-Draft v1.0, dated 2026-10-16. Owner: TAC service line. Update the version and date in each file when you change it.
+Draft v1.1, dated 2026-10-17. Owner: TAC service line. The ChainSync extension is staged separately from the original eight-service v1 baseline.

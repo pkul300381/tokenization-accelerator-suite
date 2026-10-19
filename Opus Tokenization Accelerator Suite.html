@@ -347,6 +347,16 @@
       margin-top: 8px;
     }
 
+    .architecture-frame {
+      display: block;
+      width: 100%;
+      height: 1780px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: 0 8px 28px rgba(18, 40, 72, 0.08);
+    }
+
     .section {
       margin-top: 36px;
     }
@@ -415,47 +425,6 @@
 
     .card.dis {
       opacity: 0.6;
-    }
-
-    .cs-boundary {
-      border: 2px dashed color-mix(in srgb, var(--accent) 72%, var(--line));
-      border-radius: 20px;
-      padding: 14px;
-      background: color-mix(in srgb, var(--accent) 3%, var(--surface));
-    }
-
-    .cs-boundary-title { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 2px 4px 12px; }
-    .cs-band { border: 1px solid var(--line); border-radius: 9px; padding: 14px 16px; margin-top: 10px; }
-    .cs-band-label { font-size: 11px; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; }
-    .cs-pillrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 9px; }
-    .cs-pillrow span { flex: 1 1 130px; text-align: center; border-radius: 6px; padding: 9px 10px; font-size: 13px; font-weight: 500; }
-    .cs-traditional, .cs-networks { background: var(--surface-2); color: var(--fg); }
-    .cs-traditional .cs-pillrow span { background: #0b2b52; color: #fff; }
-    .cs-engines { background: #0b2b52; border-radius: 10px; padding: 14px; margin-top: 10px; }
-    .cs-engine-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .cs-engine { background: #205aa0; color: #fff; border: 1px solid #5b91ca; border-radius: 7px; padding: 14px; min-width: 0; }
-    .cs-engine h3 { font-size: 15px; }
-    .cs-engine p { margin-top: 7px; font-size: 12px; line-height: 1.45; color: #f2f6fc; }
-    .cs-control { background: var(--surface-2); color: var(--fg); }
-    .cs-adapter { background: var(--brand-gold); color: #172b46; border-color: var(--brand-gold); }
-    .cs-routing { background: #205aa0; color: #fff; border-color: #205aa0; }
-    .cs-routing .cs-band-label { color: #fff; }
-    .cs-networks { margin-top: 10px; }
-    .cs-components { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-    .cs-component { position: relative; background: var(--surface-2); border: 1px solid var(--line); border-left: 6px solid var(--accent); border-radius: 0 9px 9px 0; padding: 16px 16px 16px 58px; min-width: 0; }
-    .cs-component:nth-child(3n + 1) { border-left-color: #0b2b52; }
-    .cs-component:nth-child(3n + 2) { border-left-color: #205aa0; }
-    .cs-component:nth-child(3n) { border-left-color: #5b91ca; }
-    .cs-component .cs-number { position: absolute; top: 15px; left: 10px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--brand-gold); color: #172b46; font-weight: 700; }
-    .cs-component h3 { padding-bottom: 10px; border-bottom: 2px solid var(--line); color: var(--fg); }
-    .cs-component p { margin-top: 10px; color: var(--muted); font-size: 13px; }
-
-    @media (max-width: 900px) {
-      .cs-engine-grid, .cs-components { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 600px) {
-      .cs-boundary { padding: 9px; border-radius: 14px; }
-      .cs-engine-grid, .cs-components { grid-template-columns: 1fr; }
     }
 
     .card .meta {
@@ -957,6 +926,7 @@
         <a href="#/compliance" data-nav="compliance">Compliance</a>
         <a href="#/notifications" data-nav="notifications">Notifications</a>
         <a href="#/gateway" data-nav="gateway">Token Gateway</a>
+        <a href="#/architecture" data-nav="architecture">Architecture</a>
       </nav>
       <button class="theme-btn" id="theme-btn" type="button" aria-label="Change colour theme">Theme: System</button>
     </div>
@@ -981,6 +951,7 @@
             Calculator</span></a>
         <a href="#/audit" data-side-nav="audit"><span class="side-icon" aria-hidden="true">AR</span><span>Audit &amp;
             Reporting</span></a>
+        <a href="#/architecture" data-side-nav="architecture"><span class="side-icon" aria-hidden="true">SA</span><span>Suite Architecture</span></a>
       </nav>
     </aside>
     <main id="app" tabindex="-1"></main>
@@ -1141,7 +1112,7 @@
       var ACCELERATORS = [
         { key: 'asset', tag: 'Digital asset tokenization', name: 'Asset Tokenization Services', desc: 'Services designed to integrate with core L2 infrastructure to build and maintain tokenization of real-world assets.', target: 'Banks, real estate developers', services: [] },
         { key: 'deposit', tag: 'Deposit tokens', name: 'Deposit Token Services', desc: 'Core integration services that turn bank-supported financial instruments into deposit tokens for easy access and stability.', target: 'Banks, FIs', services: [{ label: 'Fiat Conversion Bridge', route: 'fx' }] },
-        { key: 'chainsync', tag: 'Off-chain · on-chain integration', name: 'ChainSync Integration Layer', desc: 'An integration accelerator connecting traditional financial messaging and reference data to coordinated off-chain processing and on-chain settlement, with multi-chain routing, reconciliation, compliance reporting and auditability.', target: 'Banks, transfer agents, paying agents, custodians and financial institutions', services: [{ label: 'Audit & Reporting', route: 'audit' }] },
+        { key: 'chainsync', tag: 'RWA', name: 'ChainSync Integration Layer', desc: 'On-chain and off-chain services that transform off-chain approvals into on-chain settlement.', target: 'FIs', services: [{ label: 'Audit & Reporting', route: 'audit' }] },
         { key: 'stable', tag: 'Stablecoins', name: 'Stablecoin Enabler Services', desc: 'A customisable framework for banks and FIs to build a middleware platform that lets customers transact, hold or transfer stablecoins.', target: 'FIs dealing with stablecoins', services: [{ label: 'Stablecoin Selector', route: 'stablecoin' }, { label: 'Wallet Adapter', route: 'wallet' }, { label: 'Fiat Conversion Bridge', route: 'fx' }, { label: 'Gas Fee Calculator', route: 'gas' }] },
         { key: 'chain', tag: 'Consortium blockchain', name: 'Opus Blockchain Setup', desc: 'A consortium or permissioned blockchain that maintains a shared ledger and distributes tokens honoured across all members.', target: 'FIs, banks, agentic commerce', services: [{ label: 'Stablecoin Selector', route: 'stablecoin' }, { label: 'Audit & Reporting', route: 'audit' }] }
       ];
@@ -1192,6 +1163,7 @@
         else if (r.name === 'compliance') { html = pageCompliance(); after = null; }
         else if (r.name === 'notifications') { html = pageNotifications(); after = null; }
         else if (r.name === 'gateway') { html = pageGateway(); after = null; }
+        else if (r.name === 'architecture') { html = pageArchitecture(); after = bindArchitectureTheme; }
         else if (r.name === 'suite') { html = pageSuite(r.arg); after = null; }
         else { html = pageHome(); after = null; }
         app.innerHTML = html + '<p class="foot"><span class="pill acc">Simulated data</span> All catalogue entries, rates, balances and transactions are simulated for demonstration. No provider, blockchain network, wallet or AWS account is connected, and no real funds move. · Demo build v1.0 · Environment: demo</p>';
@@ -1241,7 +1213,6 @@
         var a = null;
         for (var i = 0; i < ACCELERATORS.length; i++) if (ACCELERATORS[i].key === key) a = ACCELERATORS[i];
         if (!a) return '<p>Accelerator not found. <a href="#/">Back to the suite</a></p>';
-        if (a.key === 'chainsync') return pageChainSync(a);
         var links = a.services.length ? a.services.map(function (s) {
           return '<a class="btn line" href="#/' + s.route + '">' + esc(s.label) + '</a>';
         }).join(' ') : '<p class="small muted">This accelerator is an overview in this demo. Its service pages are not included yet.</p>';
@@ -1251,46 +1222,6 @@
           '<p class="lead">' + esc(a.desc) + '</p></section>' +
           '<section class="section split"><div class="panel"><h2>Who it is for</h2><p class="muted" style="margin-top:8px">' + esc(a.target) + '</p></div>' +
           '<div class="panel"><h2>Services in this accelerator</h2><div class="toolbar" style="margin-top:12px">' + links + '</div></div></section>';
-      }
-
-      function pageChainSync(a) {
-        var engines = [
-          { title: 'Event Ingestion Engine', desc: 'ISO 20022, SWIFT and FIX messages; custodian APIs and webhooks.' },
-          { title: 'Orchestration Engine', desc: 'Corporate action rules, workflow state machines and exception management.' },
-          { title: 'Oracle Engine', desc: 'SOFR and reference rates, foreign exchange rates and NAV feeds.' }
-        ];
-        var components = [
-          ['ISO 20022 Event Listener', 'Ingest corporate action messages from custodians and paying agents through standard financial messaging protocols.'],
-          ['Coupon Payment Automator', 'Schedule triggers and smart contract execution for fixed-rate and SOFR-linked floating-rate bonds across asset types.'],
-          ['Oracle Connector', 'Connect Chainlink and custom feeds for SOFR and reference-rate resets, FX rates, and on-chain NAV updates.'],
-          ['Multi-Chain Router', 'Provide an asset registry, chain selection and execution adapters across public, permissioned, and institutional networks.'],
-          ['Stablecoin Delivery Rail', 'Coordinate USDC conversion and wallet delivery with fiat-equivalent reporting for tax and accounting compliance.'],
-          ['Ledger Scan', 'Snapshot token ownership at a record date, calculate per-holder net entitlements, and pass results to the smart contract executor.'],
-          ['Reconciliation Engine', 'Compare off-chain and on-chain positions continuously, detect breaks, and support automated repair workflows.'],
-          ['Compliance & Reporting', 'Bring together KYC wallet registry, 1099/FATCA output, AML screening, Travel Rule support, and an immutable audit log.'],
-          ['Smart Contract Library', 'Offer pre-audited templates for coupon payments, redemption, voting, stock splits, tender offers, and waterfall distributions.']
-        ];
-        var engineCards = engines.map(function (item) {
-          return '<article class="cs-engine"><h3>' + esc(item.title) + '</h3><p>' + esc(item.desc) + '</p></article>';
-        }).join('');
-        var componentCards = components.map(function (item, index) {
-          return '<article class="cs-component"><span class="cs-number" aria-hidden="true">' + (index + 1) + '</span><h3>' + esc(item[0]) + '</h3><p>' + esc(item[1]) + '</p></article>';
-        }).join('');
-        return '' +
-          '<div class="crumbs"><a href="#/">Suite</a> / ' + esc(a.name) + '</div>' +
-          '<section class="hero"><div class="caps">' + esc(a.tag) + '</div><h1 style="margin-top:8px">' + esc(a.name) + '</h1>' +
-          '<p class="lead">' + esc(a.desc) + '</p><div class="meta" style="margin-top:14px"><span class="pill acc">Architecture overview</span><span class="pill">Accelerator components</span></div></section>' +
-          '<section class="section"><div class="section-head"><div><div class="caps">Functional architecture</div><h2>Off-chain to on-chain integration</h2></div><span class="small muted">Illustrative component model</span></div>' +
-          '<div class="cs-band cs-traditional"><div class="cs-band-label">Traditional financial infrastructure</div><div class="cs-pillrow"><span>Core Banking</span><span>Transfer Agent</span><span>Paying Agent</span><span>DTC / Custody</span><span>ISO 20022 / SWIFT / FIX</span></div></div>' +
-          '<div class="cs-boundary"><div class="cs-boundary-title"><strong class="caps">Opus ChainSync integration layer</strong><span class="small muted">Connect · orchestrate · verify · settle</span></div>' +
-          '<div class="cs-engines"><div class="cs-engine-grid">' + engineCards + '</div></div>' +
-          '<div class="cs-band cs-control"><div class="cs-band-label">Control plane</div><div class="cs-pillrow"><span>Reconciliation Engine</span><span>Compliance &amp; Reporting Module</span><span>KYC Wallet Registry</span><span>Audit Log</span></div></div>' +
-          '<div class="cs-band cs-adapter"><div class="cs-band-label">Smart Contract Adapter</div><div class="cs-pillrow"><span>Pre-built Templates</span><span>Multi-signature Authorization</span><span>Simulation Before Execution</span><span>Gas Optimization &amp; Retry Logic</span></div></div>' +
-          '<div class="cs-band cs-routing"><div class="cs-band-label">Multi-chain routing engine</div><div class="cs-pillrow"><span>Ethereum</span><span>Solana</span><span>Avalanche</span><span>Hyperledger Fabric</span><span>R3 Corda</span><span>Kinexys</span><span>GS DAP</span><span>Canton</span></div></div></div>' +
-          '<div class="cs-band cs-networks"><div class="cs-band-label">Connected blockchain networks</div><div class="cs-pillrow"><span>Token Registry</span><span>Smart Contracts</span><span>Wallet Registry</span><span>DeFi Rails</span></div></div></section>' +
-          '<section class="section"><div class="section-head"><div><div class="caps">Accelerator components</div><h2>ChainSync components for accelerated deployment</h2></div></div><div class="cs-components">' + componentCards + '</div></section>' +
-          '<section class="section split"><div class="panel"><h2>Who it is for</h2><p class="muted" style="margin-top:8px">' + esc(a.target) + '</p></div>' +
-          '<div class="panel"><h2>Related service</h2><p class="small muted" style="margin-top:8px">Review audit events, exceptions and reporting workflows.</p><div style="margin-top:12px"><a class="btn line" href="#/audit">Open Audit &amp; Reporting</a></div></div></section>';
       }
 
       /* Platform pages are read-only prototypes; decisions and delivery remain server-side. */
@@ -1320,6 +1251,31 @@
         return '<div class="crumbs"><a href="#/">Suite</a> / Token Gateway</div><div class="caps">Platform service · Single client entry point</div><h1 style="margin-top:6px">Token Gateway</h1><p class="lead">The gateway is the public entry point for web and mobile clients. It validates identity, scopes, client version and rate limits before forwarding requests.</p>' +
           '<div class="kpis" style="margin-top:22px"><div class="kpi"><div class="caps">Gateway health</div><div class="v" style="font-size:18px">Demo · reachable</div></div><div class="kpi"><div class="caps">Minimum client version</div><div class="v" style="font-size:18px">Web 1.4 · iOS 1.4 · Android 1.4</div></div><div class="kpi"><div class="caps">Body logging</div><div class="v" style="font-size:18px">Disabled</div></div></div>' +
           '<section class="section panel"><h2>Route table</h2><div class="tbl" style="margin-top:12px"><table class="data"><thead><tr><th>Path</th><th>Upstream</th><th>Scopes</th><th>Mobile allowed</th></tr></thead><tbody>' + routes.map(function (r) { return '<tr><td class="mono">' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>'; }).join('') + '</tbody></table></div><p class="small muted" style="margin-top:10px">Contract reference: API_AND_DATA.md §14. Authentication, rate limits, version rejection and private network isolation are not implemented by this standalone demo.</p></section>';
+      }
+
+      function pageArchitecture() {
+        return '<div class="crumbs"><a href="#/">Suite</a> / Architecture</div>' +
+          '<section class="hero"><div class="title-row"><div><div class="caps">Platform blueprint · L3 and L4</div>' +
+          '<h1 style="margin-top:8px">Tokenization Suite Architecture</h1>' +
+          '<p class="lead">Explore how the suite connects client experiences, the Token Gateway, business services, event processing, adapters, security and delivery infrastructure.</p></div>' +
+          '<a class="btn line" href="Tokenization Suite Architecture.html" target="_blank" rel="noopener">Open architecture page</a></div>' +
+          '<div class="toolbar" style="margin-top:16px"><span class="pill acc">Layered architecture</span><span class="pill">Cloud-agnostic · open-source first</span><span class="pill">Status and decisions included</span></div></section>' +
+          '<section class="section"><div class="section-head"><div><div class="caps">System overview</div><h2>From client request to governed deployment</h2></div><p class="small muted">Scroll the diagram horizontally on narrower screens.</p></div>' +
+          '<iframe class="architecture-frame" id="architecture-frame" src="Tokenization Suite Architecture.html" title="Tokenization Suite layered architecture diagram" loading="lazy" referrerpolicy="no-referrer"></iframe></section>';
+      }
+
+      function bindArchitectureTheme() {
+        var frame = document.getElementById('architecture-frame');
+        if (!frame) return;
+        frame.addEventListener('load', syncArchitectureTheme);
+        syncArchitectureTheme();
+      }
+
+      function syncArchitectureTheme() {
+        var frame = document.getElementById('architecture-frame');
+        if (!frame || !frame.contentWindow) return;
+        var theme = document.documentElement.getAttribute('data-theme') || 'system';
+        frame.contentWindow.postMessage({ type: 'opus-theme', theme: theme }, '*');
       }
 
       /* ---------- stablecoin selector wizard ---------- */
@@ -2094,6 +2050,7 @@
         if (t === 'system') document.documentElement.removeAttribute('data-theme');
         else document.documentElement.setAttribute('data-theme', t);
         tBtn.textContent = 'Theme: ' + (t === 'system' ? 'System' : t === 'dark' ? 'Dark' : 'Light');
+        syncArchitectureTheme();
       });
 
       render();

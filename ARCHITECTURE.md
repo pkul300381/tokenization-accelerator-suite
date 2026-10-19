@@ -1,6 +1,6 @@
 # Architecture: Opus Tokenization Accelerator Suite
 
-Version 1.0 · 2026-10-16 · Read with `PRD.md` and `API_AND_DATA.md`.
+Version 1.1 · 2026-10-17 · Read with `PRD.md` and `API_AND_DATA.md`.
 
 ## 1. Context
 
@@ -35,8 +35,10 @@ External systems the suite depends on, all reached through adapters:
           +-----------------v-------------------------------------+
           | API service (apps/api, Fastify)                     |  ECS Fargate
           |  S1 selector    S2 wallets      S3 fx bridge        |
-          |  S4 gas engine  S5 audit        S6 compliance & risk|  (called before
-          |  S7 notification module (consumer and routing)      |   every value write)
+          |  S4 gas engine  S5 audit        S6 compliance & risk|
+          |  S7 notification module (consumer and routing)      |
+          |  S9 ChainSync integration layer (staged extension)  |
+          |  (S6 compliance & risk is called before every value write) |
           +-----+------------------+------------------+---------+
                 |                  |                  |
           +-----v------+    +------v-----+    +-------v-------------------+
@@ -62,15 +64,15 @@ External systems the suite depends on, all reached through adapters:
 
 The Token Gateway is the only public entry point. Web and mobile clients never call a domain service directly. The API service calls the Compliance & Risk Engine in-process before each value-moving or configuration write. The chain transaction watcher observes submitted, confirmed and failed transactions through the chain adapter and publishes each change as an event. The Notification Service consumes those events and the compliance decisions that need attention.
 
-The web app is a static single-page application served from object storage behind a CDN. Background workers run the same code base with a different entry point. Adapters are the only place where external systems are called.
+The web app is a static single-page application served from object storage behind a CDN. Background workers run the same code base with a different entry point. Adapters are the only place where external systems are called. ChainSync (S9) is an extension to the baseline suite and remains mock-first until its network and provider integrations are validated.
 
 ## 3. Components
 
 | Component | Responsibility | Notes |
 |---|---|---|
-| `apps/web` | Suite shell and five service pages | Calls only the public API. No secrets in the bundle. |
-| `apps/api` | Business logic, validation, authorisation, audit | One module per service: `selector`, `wallets`, `fx`, `gas`, `audit`, plus `catalogue` and `deployments`. |
-| `workers` | Background jobs | Idempotent. Jobs carry an idempotency key. |
+| `apps/web` | Suite shell and six business-service pages, including staged ChainSync | Calls only the public API. No secrets in the bundle. |
+| `apps/api` | Business logic, validation, authorisation, audit | Modules include `selector`, `wallets`, `fx`, `gas`, `audit`, `chainsync`, plus `catalogue` and `deployments`. |
+| `workers` | Background jobs, including ChainSync orchestration, oracle refresh and reconciliation | Idempotent. Jobs carry an idempotency key. |
 | `packages/shared` | Schemas, types, catalogue seed, constants | Single source of truth for contracts. |
 | `packages/adapters` | Adapter interfaces and implementations | Real adapters are feature-flagged per environment. |
 | `infra/terraform` | AWS environments | Dev, staging, prod in separate accounts. |
@@ -78,6 +80,8 @@ The web app is a static single-page application served from object storage behin
 | `apps/api` compliance module | Compliance & Risk Engine (S6) | Rule sets as versioned data, evaluation, decisions, review cases. Section 13. |
 | `apps/api` notifications module and `workers` | Notification Service (S7) | Event consumer, routing, dedupe, escalation, delivery through adapters, chain transaction watcher. Section 14. |
 | `packages/events` | Event contracts | Event names, payload schemas, outbox writer, idempotent subscriber helper. |
+
+ChainSync external connections use adapter interfaces for custodian/transfer-agent APIs and webhooks, ISO 20022/SWIFT/FIX messages, oracle feeds, custody signing and chain/ledger execution. Inbound partner events are authenticated and normalized in private adapters; they are not accepted as trusted data from the public client API. Candidate networks listed in `PRD.md` are not a promise of availability: enable only adapters validated for the tenant, privacy model and deployment. The application does not hold signing keys or autonomously repair financial positions.
 
 ## 4. Adapter design
 
