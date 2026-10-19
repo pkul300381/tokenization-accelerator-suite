@@ -29,7 +29,7 @@ Build in the order set out in `BUILD_PLAN.md`. Do not ask the assistant to gener
 
 ## Run the modular web app
 
-Install the workspace dependencies with `pnpm install`, then run `pnpm dev:web`. Build it with `pnpm build:web`; check TypeScript with `pnpm typecheck:web`. The app is in `apps/web/src`, organized by app shell, shared components, and product features. The existing root-level HTML prototype remains the visual and interaction reference. Its logo and architecture document are synchronized into the Vite public directory before development and builds.
+Install the workspace dependencies with `pnpm install`, then run `pnpm dev:web`. Build it with `pnpm build:web`; check TypeScript with `pnpm typecheck:web`. The app is in `apps/web/src`, organized by app shell, shared components, and product features. The modular app is the current web experience. The layered architecture HTML remains a standalone reference and is synchronized into the Vite public directory before development and builds.
 
 ## Assumptions in this pack
 
